@@ -1,0 +1,195 @@
+@import "tailwindcss";
+
+/*
+ * ToneProfile design tokens — "Signal Lab".
+ * Dark, warm graphite surfaces; one accent (signal amber) reserved for live signal and primary
+ * actions; a cool "measure" tone used only for measured data in charts. See docs/frontend/design-system.md.
+ */
+@theme {
+  /* Surfaces */
+  --color-canvas: #0b0c0d;
+  --color-surface-1: #121315;
+  --color-surface-2: #181a1d;
+  --color-surface-3: #212428;
+  --color-line: #2a2e33;
+  --color-line-strong: #3b4047;
+
+  /* Text */
+  --color-ink: #ecebe6;
+  --color-ink-muted: #a3a19b;
+  --color-ink-faint: #817f79;
+
+  /* Signal (accent) */
+  --color-signal: #ffb23f;
+  --color-signal-strong: #ffc46b;
+  --color-signal-soft: rgb(255 178 63 / 0.14);
+  --color-signal-ink: #1c1305;
+
+  /* Data */
+  --color-measure: #8cc8d4;
+  --color-measure-soft: rgb(140 200 212 / 0.16);
+
+  /* Semantic (always paired with an icon or label) */
+  --color-ok: #74cf98;
+  --color-warn: #f28a55;
+  --color-danger: #f2585d;
+
+  /* Type */
+  --font-sans: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "SFMono-Regular", monospace;
+
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1rem;
+  --text-label--letter-spacing: 0.09em;
+  --text-display: clamp(3.25rem, 9vw, 8.5rem);
+  --text-display--line-height: 0.92;
+  --text-display--letter-spacing: -0.02em;
+  --text-headline: clamp(2rem, 4.2vw, 3.5rem);
+  --text-headline--line-height: 1.02;
+  --text-headline--letter-spacing: -0.015em;
+
+  /* Shape */
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  /* Motion (mirrors src/motion/tokens.ts) */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out-emph: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-in-emph: cubic-bezier(0.3, 0, 0.8, 0.15);
+
+  --animate-signal-flow: signal-flow 1.6s linear infinite;
+  --animate-signal-breathe: signal-breathe 2.4s var(--ease-standard) infinite;
+
+  @keyframes signal-flow {
+    from {
+      background-position: 100% 0;
+    }
+    to {
+      background-position: -100% 0;
+    }
+  }
+
+  @keyframes signal-breathe {
+    0%,
+    100% {
+      opacity: 0.55;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+}
+
+:root {
+  --duration-instant: 80ms;
+  --duration-fast: 140ms;
+  --duration-base: 220ms;
+  --duration-slow: 360ms;
+  --duration-signal: 900ms;
+  color-scheme: dark;
+}
+
+@layer base {
+  html {
+    background: var(--color-canvas);
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Header · content · footer: the content grows so the footer sits at the bottom of short pages. */
+  #content {
+    flex: 1 0 auto;
+  }
+
+  ::selection {
+    background: var(--color-signal);
+    color: var(--color-signal-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-signal);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+
+  /* Numeric data never jumps while values update. */
+  .tabular,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer utilities {
+  /* Technical label: mono, uppercase, tracked. */
+  .label {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    line-height: var(--text-label--line-height);
+    letter-spacing: var(--text-label--letter-spacing);
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+  }
+
+  /* Engineering grid used behind hero and empty states. */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, rgb(255 255 255 / 0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  /* Moving signal highlight for an active segment of the Signal Rail. */
+  .signal-flow {
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--color-signal) 45%,
+      var(--color-signal-strong) 50%,
+      var(--color-signal) 55%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: var(--animate-signal-flow);
+  }
+
+  .hairline {
+    border-color: var(--color-line);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  html,
+  body {
+    background: #fff;
+    color: #000;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

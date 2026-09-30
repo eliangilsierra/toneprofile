@@ -1,0 +1,1062 @@
+openapi: 3.1.0
+info:
+  title: ToneProfile API
+  version: 0.1.0-draft
+  summary: Contract between the ToneProfile web app and the ToneProfile backend.
+  description: |
+    Contract-first draft. Until the backend repository exists this file is the source of truth;
+    afterwards the backend publishes it and the web app pins a copy.
+
+    Conventions
+    - All routes are versioned under `/v1`.
+    - Long-running work (audio analysis, research, generation) is asynchronous: create → 202 →
+      poll the resource (`poll_after_ms`) until a terminal status.
+    - Errors use RFC 9457 `application/problem+json` with a stable machine `code`.
+    - Human-readable prose produced by the backend (tone summary, explanations, claim statements)
+      is generated in the `locale` requested at generation time. Everything else is structured
+      data that the client localizes (step summaries, warnings, error codes).
+    - Numbers use SI/engineering units stated in each field (s, ms, Hz, dB); knob values 0–100.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+servers:
+  - url: /api
+    description: Same-origin path proxied by the web app to the backend
+security:
+  - bearerAuth: []
+tags:
+  - name: catalog
+    description: Devices and song lookup
+  - name: uploads
+    description: Direct-to-storage audio uploads
+  - name: generations
+    description: Asynchronous tone generation jobs
+  - name: tone-profiles
+    description: Device-independent tone profiles (evidence + intent)
+  - name: presets
+    description: Device presets, versions, downloads and feedback
+  - name: examples
+    description: Curated, read-only example generations shown publicly
+
+paths:
+  /v1/devices:
+    get:
+      tags: [catalog]
+      operationId: listDevices
+      summary: Devices the product knows about (available and planned)
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Device" }
+        "429": { $ref: "#/components/responses/Problem" }
+
+  /v1/songs/search:
+    get:
+      tags: [catalog]
+      operationId: searchSongs
+      summary: Search songs (canonical IDs from MusicBrainz)
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 120 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 20, default: 8 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/SongCandidate" }
+        "400": { $ref: "#/components/responses/Problem" }
+
+  /v1/uploads:
+    post:
+      tags: [uploads]
+      operationId: createUpload
+      summary: Request a presigned URL for a direct-to-storage upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UploadCreate" }
+      responses:
+        "201":
+          description: Upload ticket
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadTicket" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "413": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        "429": { $ref: "#/components/responses/Problem" }
+
+  /v1/uploads/{uploadId}/complete:
+    post:
+      tags: [uploads]
+      operationId: completeUpload
+      summary: Signal that the file was uploaded; starts server-side probing
+      parameters:
+        - $ref: "#/components/parameters/UploadId"
+      responses:
+        "202":
+          description: Probing started
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Upload" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /v1/uploads/{uploadId}:
+    get:
+      tags: [uploads]
+      operationId: getUpload
+      summary: Get upload status
+      parameters:
+        - $ref: "#/components/parameters/UploadId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Upload" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /v1/examples:
+    get:
+      tags: [examples]
+      operationId: listExamples
+      summary: Curated example generations (public, read-only)
+      description: |
+        Examples are finished generations curated by the team. Their prose (headline, summary,
+        explanations) exists per locale, so `generation_id` points to the generation produced in
+        the requested `locale`. They never appear in `GET /v1/generations` and reject mutations
+        (cancel, retry, feedback) with `409 conflict`.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/LocaleQuery"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/ExampleSummary" }
+        "429": { $ref: "#/components/responses/Problem" }
+
+  /v1/examples/{slug}:
+    get:
+      tags: [examples]
+      operationId: getExample
+      summary: One example; its generation, tone profile and preset are read with the usual endpoints
+      security: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string, pattern: "^[a-z0-9-]+$" }
+        - $ref: "#/components/parameters/LocaleQuery"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExampleSummary" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /v1/generations:
+    get:
+      tags: [generations]
+      operationId: listGenerations
+      summary: List my generations
+      parameters:
+        - name: cursor
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, next_cursor]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/GenerationListItem" }
+                  next_cursor:
+                    type: [string, "null"]
+        "401": { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [generations]
+      operationId: createGeneration
+      summary: Start a tone generation (asynchronous)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GenerationCreate" }
+      responses:
+        "202":
+          description: Accepted; poll the generation
+          headers:
+            Location:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Generation" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "422": { $ref: "#/components/responses/Problem" }
+        "429": { $ref: "#/components/responses/Problem" }
+
+  /v1/generations/{generationId}:
+    get:
+      tags: [generations]
+      operationId: getGeneration
+      summary: Get a generation (poll this)
+      parameters:
+        - $ref: "#/components/parameters/GenerationId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Generation" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /v1/generations/{generationId}/cancel:
+    post:
+      tags: [generations]
+      operationId: cancelGeneration
+      summary: Cancel a running generation
+      parameters:
+        - $ref: "#/components/parameters/GenerationId"
+      responses:
+        "200":
+          description: Cancelled
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Generation" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /v1/generations/{generationId}/retry:
+    post:
+      tags: [generations]
+      operationId: retryGeneration
+      summary: Retry a failed generation from its last successful step
+      parameters:
+        - $ref: "#/components/parameters/GenerationId"
+      responses:
+        "202":
+          description: Retrying
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Generation" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /v1/tone-profiles/{toneProfileId}:
+    get:
+      tags: [tone-profiles]
+      operationId: getToneProfile
+      summary: Get a tone profile
+      parameters:
+        - name: toneProfileId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ToneProfile" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /v1/presets/{presetId}:
+    get:
+      tags: [presets]
+      operationId: getPreset
+      summary: Get a preset and its versions
+      parameters:
+        - $ref: "#/components/parameters/PresetId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Preset" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /v1/presets/{presetId}/versions/{version}:
+    get:
+      tags: [presets]
+      operationId: getPresetVersion
+      summary: Get one preset version
+      parameters:
+        - $ref: "#/components/parameters/PresetId"
+        - $ref: "#/components/parameters/Version"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PresetVersion" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /v1/presets/{presetId}/versions/{version}/download:
+    get:
+      tags: [presets]
+      operationId: downloadPresetVersion
+      summary: Device file for this version (GP-180 `.prst`, 1128 bytes)
+      parameters:
+        - $ref: "#/components/parameters/PresetId"
+        - $ref: "#/components/parameters/Version"
+      responses:
+        "200":
+          description: File
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "409":
+          description: File not available for this version (see `download.reason`)
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/Problem" }
+
+  /v1/presets/{presetId}/versions/{version}/feedback:
+    post:
+      tags: [presets]
+      operationId: sendFeedback
+      summary: Rate a preset version
+      parameters:
+        - $ref: "#/components/parameters/PresetId"
+        - $ref: "#/components/parameters/Version"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FeedbackCreate" }
+      responses:
+        "201":
+          description: Recorded
+        "400": { $ref: "#/components/responses/Problem" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    UploadId:
+      name: uploadId
+      in: path
+      required: true
+      schema: { type: string }
+    GenerationId:
+      name: generationId
+      in: path
+      required: true
+      schema: { type: string }
+    PresetId:
+      name: presetId
+      in: path
+      required: true
+      schema: { type: string }
+    LocaleQuery:
+      name: locale
+      in: query
+      description: Locale of the prose to return; falls back to `en`.
+      schema: { $ref: "#/components/schemas/Locale" }
+    Version:
+      name: version
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+
+  responses:
+    Problem:
+      description: Error
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+
+  schemas:
+    Locale:
+      type: string
+      enum: [en, es]
+
+    ErrorCode:
+      type: string
+      description: Stable machine-readable error/warning code. Clients localize the message.
+      enum:
+        - validation_error
+        - unauthorized
+        - not_found
+        - conflict
+        - rate_limited
+        - unsupported_format
+        - invalid_audio
+        - audio_too_short
+        - audio_too_long
+        - file_too_large
+        - no_guitar_detected
+        - multiple_guitars
+        - low_quality_audio
+        - song_not_found
+        - research_unavailable
+        - ai_unavailable
+        - mapping_failed
+        - preset_generation_failed
+        - unsupported_device
+        - job_timeout
+        - internal
+
+    Problem:
+      type: object
+      required: [type, title, status, code, retryable]
+      properties:
+        type: { type: string, format: uri-reference }
+        title: { type: string }
+        status: { type: integer }
+        code: { $ref: "#/components/schemas/ErrorCode" }
+        detail: { type: string }
+        retryable: { type: boolean }
+        hint:
+          type: string
+          description: Optional machine hint for the client (e.g. `choose_other_section`).
+        errors:
+          type: array
+          description: Field-level validation errors.
+          items:
+            type: object
+            required: [field, code]
+            properties:
+              field: { type: string }
+              code: { type: string }
+
+    Device:
+      type: object
+      required: [key, vendor, name, status, delivery]
+      properties:
+        key: { type: string, examples: [valeton_gp180] }
+        vendor: { type: string }
+        name: { type: string }
+        status:
+          type: string
+          enum: [available, planned]
+        delivery:
+          type: array
+          description: How presets reach the device.
+          items:
+            type: string
+            enum: [preset_file, dial_in_sheet]
+        file_extension: { type: [string, "null"], examples: [".prst"] }
+        import_via: { type: [string, "null"], examples: ["Valeton Suite"] }
+
+    SongCandidate:
+      type: object
+      required: [id, title, artist]
+      properties:
+        id: { type: string, description: Canonical recording ID (MusicBrainz MBID in production) }
+        title: { type: string }
+        artist: { type: string }
+        year: { type: [integer, "null"] }
+        duration_s: { type: [number, "null"] }
+
+    UploadCreate:
+      type: object
+      required: [purpose, filename, content_type, size_bytes]
+      properties:
+        purpose:
+          type: string
+          enum: [reference, recording]
+        filename: { type: string, maxLength: 255 }
+        content_type:
+          type: string
+          enum: [audio/wav, audio/x-wav, audio/flac, audio/mpeg, audio/mp4, audio/aac, audio/ogg]
+        size_bytes: { type: integer, minimum: 1, maximum: 20971520 }
+
+    UploadTicket:
+      type: object
+      required: [upload_id, put_url, headers, expires_at, max_bytes]
+      properties:
+        upload_id: { type: string }
+        put_url: { type: string, description: Presigned URL; PUT the raw bytes }
+        headers:
+          type: object
+          additionalProperties: { type: string }
+        expires_at: { type: string, format: date-time }
+        max_bytes: { type: integer }
+
+    Upload:
+      type: object
+      required: [id, status, purpose]
+      properties:
+        id: { type: string }
+        purpose:
+          type: string
+          enum: [reference, recording]
+        status:
+          type: string
+          enum: [awaiting_upload, probing, ready, rejected]
+        duration_s: { type: [number, "null"] }
+        sample_rate: { type: [integer, "null"] }
+        channels: { type: [integer, "null"] }
+        error:
+          oneOf:
+            - $ref: "#/components/schemas/Problem"
+            - type: "null"
+
+    TimeWindow:
+      type: object
+      required: [start_s, end_s]
+      properties:
+        start_s: { type: number, minimum: 0 }
+        end_s: { type: number, description: "end_s - start_s must be between 5 and 90 seconds" }
+
+    PickupConfig:
+      type: string
+      enum: [sss, hss, hh, ss, p90, single_humbucker, other]
+    PickupPosition:
+      type: string
+      enum: [neck, middle, bridge, neck_middle, middle_bridge, neck_bridge]
+    Tuning:
+      type: string
+      enum: [standard, eb_standard, drop_d, d_standard, drop_c, open_g, open_d, other]
+
+    GuitarInput:
+      type: object
+      required: [pickup_config, pickup_position, tuning]
+      properties:
+        pickup_config: { $ref: "#/components/schemas/PickupConfig" }
+        pickup_position: { $ref: "#/components/schemas/PickupPosition" }
+        tuning: { $ref: "#/components/schemas/Tuning" }
+
+    GenerationCreate:
+      type: object
+      description: At least one of `song_id` or `reference` is required.
+      required: [device_key, guitar, locale]
+      properties:
+        song_id: { type: [string, "null"] }
+        reference:
+          oneOf:
+            - type: object
+              required: [upload_id, window]
+              properties:
+                upload_id: { type: string }
+                window: { $ref: "#/components/schemas/TimeWindow" }
+            - type: "null"
+        section_hint:
+          type: [string, "null"]
+          enum: [intro, verse, chorus, riff, solo, clean_part, null]
+        device_key: { type: string }
+        guitar: { $ref: "#/components/schemas/GuitarInput" }
+        locale: { $ref: "#/components/schemas/Locale" }
+
+    GenerationStatus:
+      type: string
+      enum: [queued, running, ready, failed, cancelled]
+
+    StepKey:
+      type: string
+      description: Pipeline steps in execution order.
+      enum: [resolve_song, analyze_audio, research_gear, draft_intent, map_to_device, validate_patch, build_preset]
+
+    StepStatus:
+      type: string
+      enum: [pending, running, done, skipped, failed]
+
+    StepSummary:
+      description: Structured facts produced by a step. The client renders and localizes them.
+      oneOf:
+        - type: object
+          required: [kind, title, artist]
+          properties:
+            kind: { const: song }
+            title: { type: string }
+            artist: { type: string }
+            year: { type: [integer, "null"] }
+        - type: object
+          required: [kind, analyzed_s, separation, guitar_dominance, gain_class]
+          properties:
+            kind: { const: audio }
+            analyzed_s: { type: number }
+            separation: { type: string, enum: [none, stem_model] }
+            guitar_dominance: { type: number, minimum: 0, maximum: 1 }
+            gain_class: { $ref: "#/components/schemas/GainClassEstimate" }
+        - type: object
+          required: [kind, sources_read, claims_kept, claims_dropped]
+          properties:
+            kind: { const: research }
+            sources_read: { type: integer }
+            claims_kept: { type: integer }
+            claims_dropped: { type: integer, description: Claims removed because their quote could not be verified }
+        - type: object
+          required: [kind, blocks, amp_archetype]
+          properties:
+            kind: { const: intent }
+            blocks: { type: integer }
+            amp_archetype: { $ref: "#/components/schemas/Archetype" }
+        - type: object
+          required: [kind, candidates_evaluated, spectral_error_db]
+          properties:
+            kind: { const: mapping }
+            candidates_evaluated: { type: integer }
+            spectral_error_db:
+              type: [number, "null"]
+              description: Mean absolute LTAS error vs. measured target, when a measured target exists.
+        - type: object
+          required: [kind, checks_passed, checks_total]
+          properties:
+            kind: { const: validation }
+            checks_passed: { type: integer }
+            checks_total: { type: integer }
+        - type: object
+          required: [kind, file_bytes]
+          properties:
+            kind: { const: preset }
+            file_bytes: { type: [integer, "null"] }
+
+    Step:
+      type: object
+      required: [key, status]
+      properties:
+        key: { $ref: "#/components/schemas/StepKey" }
+        status: { $ref: "#/components/schemas/StepStatus" }
+        started_at: { type: [string, "null"], format: date-time }
+        finished_at: { type: [string, "null"], format: date-time }
+        summary:
+          oneOf:
+            - $ref: "#/components/schemas/StepSummary"
+            - type: "null"
+
+    Warning:
+      type: object
+      required: [code]
+      properties:
+        code: { $ref: "#/components/schemas/ErrorCode" }
+        step: { $ref: "#/components/schemas/StepKey" }
+
+    Generation:
+      type: object
+      required: [id, status, created_at, updated_at, input, steps, estimate, poll_after_ms, warnings]
+      properties:
+        id: { type: string }
+        status: { $ref: "#/components/schemas/GenerationStatus" }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        input:
+          type: object
+          required: [device_key, guitar, locale]
+          properties:
+            song:
+              oneOf:
+                - $ref: "#/components/schemas/SongCandidate"
+                - type: "null"
+            reference_window:
+              oneOf:
+                - $ref: "#/components/schemas/TimeWindow"
+                - type: "null"
+            device_key: { type: string }
+            guitar: { $ref: "#/components/schemas/GuitarInput" }
+            locale: { $ref: "#/components/schemas/Locale" }
+        steps:
+          type: array
+          items: { $ref: "#/components/schemas/Step" }
+        estimate:
+          type: object
+          description: Typical total duration measured on recent generations of the same mode.
+          required: [p50_s, p90_s]
+          properties:
+            p50_s: { type: number }
+            p90_s: { type: number }
+        poll_after_ms: { type: integer, description: Suggested delay before polling again }
+        warnings:
+          type: array
+          items: { $ref: "#/components/schemas/Warning" }
+        result:
+          oneOf:
+            - type: object
+              required: [tone_profile_id, preset_id, preset_version]
+              properties:
+                tone_profile_id: { type: string }
+                preset_id: { type: string }
+                preset_version: { type: integer }
+            - type: "null"
+        error:
+          oneOf:
+            - $ref: "#/components/schemas/Problem"
+            - type: "null"
+
+    GenerationListItem:
+      type: object
+      required: [id, status, created_at, device_key]
+      properties:
+        id: { type: string }
+        status: { $ref: "#/components/schemas/GenerationStatus" }
+        created_at: { type: string, format: date-time }
+        device_key: { type: string }
+        song:
+          oneOf:
+            - $ref: "#/components/schemas/SongCandidate"
+            - type: "null"
+        has_reference_audio: { type: boolean }
+        preset_name: { type: [string, "null"] }
+
+    ExampleSummary:
+      type: object
+      required:
+        [slug, generation_id, locale, song, device_key, has_reference_audio, gain_class, confidence, headline, warnings]
+      properties:
+        slug: { type: string, examples: [northern-lights] }
+        generation_id:
+          type: string
+          description: Ready generation for this example in `locale` (read-only).
+        locale: { $ref: "#/components/schemas/Locale" }
+        song: { $ref: "#/components/schemas/SongCandidate" }
+        device_key: { type: string }
+        has_reference_audio: { type: boolean }
+        gain_class:
+          oneOf:
+            - $ref: "#/components/schemas/GainClass"
+            - type: "null"
+        confidence: { type: number, minimum: 0, maximum: 1, description: Overall tone-profile confidence }
+        headline: { type: string, description: "One-line description of the tone, in `locale`" }
+        warnings:
+          type: array
+          description: Warning codes of the generation, so the list can flag degraded results.
+          items: { $ref: "#/components/schemas/ErrorCode" }
+
+    EvidenceLevel:
+      type: string
+      enum: [confirmed, reported, likely, inferred, unknown]
+
+    Role:
+      type: string
+      enum: [gate, compressor, boost, drive, fuzz, pitch, wah, amp, cab, eq, modulation, delay, reverb, volume]
+
+    Archetype:
+      type: string
+      description: Controlled vocabulary; see docs/architecture/tone-representation.md.
+      enum:
+        - fender_tweed
+        - fender_blackface_clean
+        - vox_ac_topboost
+        - british_plexi
+        - british_high_gain
+        - american_high_gain_modern
+        - dumble_style
+        - boutique_edge
+        - jazz_solid_state_clean
+        - acoustic_sim
+        - ts_style_boost
+        - klon_style
+        - rat_style_distortion
+        - muff_style_fuzz
+        - fuzz_face_style
+        - octave_fuzz
+        - clean_boost
+        - compressor
+        - noise_gate
+        - open_back_1x12
+        - open_back_2x12
+        - closed_back_4x12
+        - room
+        - plate
+        - spring
+        - hall
+        - shimmer
+        - digital_delay
+        - analog_delay
+        - tape_delay
+        - dotted_eighth_delay
+        - chorus
+        - phaser
+        - flanger
+        - uni_vibe
+        - tremolo
+        - rotary
+
+    GainClass:
+      type: string
+      enum: [clean, edge_of_breakup, crunch, high_gain, fuzz]
+
+    GainClassEstimate:
+      type: object
+      required: [value, p]
+      properties:
+        value: { $ref: "#/components/schemas/GainClass" }
+        p: { type: number, minimum: 0, maximum: 1 }
+
+    Source:
+      type: object
+      required: [url, publisher, title, retrieved_at]
+      properties:
+        url: { type: string }
+        publisher: { type: string }
+        title: { type: string }
+        quote_excerpt: { type: [string, "null"], maxLength: 200 }
+        retrieved_at: { type: string, format: date-time }
+
+    Claim:
+      type: object
+      required: [id, role, item, statement, specificity, evidence_level, sources]
+      properties:
+        id: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        item: { type: string, description: Gear name as stated by the sources }
+        statement: { type: string, description: Localized sentence }
+        specificity:
+          type: string
+          enum: [this_recording, artist_general]
+        evidence_level: { $ref: "#/components/schemas/EvidenceLevel" }
+        sources:
+          type: array
+          items: { $ref: "#/components/schemas/Source" }
+
+    Spectrum:
+      type: object
+      description: Long-term average spectrum, loudness-normalized, 1/3-octave bands.
+      required: [bands_hz, db]
+      properties:
+        bands_hz:
+          type: array
+          items: { type: number }
+        db:
+          type: array
+          items: { type: number }
+
+    AudioEvidence:
+      type: object
+      required: [window, analyzed_s, separation, guitar_dominance, ltas, gain_class, ambience]
+      properties:
+        window: { $ref: "#/components/schemas/TimeWindow" }
+        analyzed_s: { type: number }
+        separation: { type: string, enum: [none, stem_model] }
+        guitar_dominance: { type: number }
+        ltas: { $ref: "#/components/schemas/Spectrum" }
+        gain_class: { $ref: "#/components/schemas/GainClassEstimate" }
+        ambience:
+          type: object
+          required: [reverb]
+          properties:
+            reverb: { type: string, enum: [none, low, medium, high] }
+            delay:
+              type: [object, "null"]
+              properties:
+                time_ms: { type: number }
+                subdivision: { type: [string, "null"], enum: [quarter, dotted_eighth, eighth, null] }
+            modulation:
+              type: [object, "null"]
+              properties:
+                kind: { type: string, enum: [chorus, phaser, flanger, tremolo, vibrato] }
+                rate_hz: { type: [number, "null"] }
+
+    PerceptualTarget:
+      type: object
+      required: [value, confidence, basis]
+      properties:
+        value: { type: number, minimum: 0, maximum: 1 }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        basis:
+          type: string
+          enum: [measured, research, inferred]
+
+    IntentBlock:
+      type: object
+      required: [id, role, archetype, enabled, confidence, evidence_level, alternatives]
+      properties:
+        id: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        archetype: { $ref: "#/components/schemas/Archetype" }
+        enabled: { type: boolean }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        evidence_level: { $ref: "#/components/schemas/EvidenceLevel" }
+        alternatives:
+          type: array
+          items: { $ref: "#/components/schemas/Archetype" }
+        claim_ids:
+          type: array
+          items: { type: string }
+
+    ToneProfile:
+      type: object
+      description: User-facing Tone Profile = ToneEvidence + ToneIntent (device-independent).
+      required: [id, generation_id, locale, summary, confidence, evidence, intent]
+      properties:
+        id: { type: string }
+        generation_id: { type: string }
+        locale: { $ref: "#/components/schemas/Locale" }
+        summary: { type: string, description: Localized one-paragraph description }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        evidence:
+          type: object
+          required: [claims]
+          properties:
+            claims:
+              type: array
+              items: { $ref: "#/components/schemas/Claim" }
+            audio:
+              oneOf:
+                - $ref: "#/components/schemas/AudioEvidence"
+                - type: "null"
+        intent:
+          type: object
+          required: [chain, targets]
+          properties:
+            chain:
+              type: array
+              items: { $ref: "#/components/schemas/IntentBlock" }
+            targets:
+              type: object
+              required: [saturation, low_end, mid_emphasis, brightness, tightness, compression, ambience]
+              properties:
+                saturation: { $ref: "#/components/schemas/PerceptualTarget" }
+                low_end: { $ref: "#/components/schemas/PerceptualTarget" }
+                mid_emphasis: { $ref: "#/components/schemas/PerceptualTarget" }
+                brightness: { $ref: "#/components/schemas/PerceptualTarget" }
+                tightness: { $ref: "#/components/schemas/PerceptualTarget" }
+                compression: { $ref: "#/components/schemas/PerceptualTarget" }
+                ambience: { $ref: "#/components/schemas/PerceptualTarget" }
+
+    DeviceParam:
+      type: object
+      required: [key, label, value, unit, min, max]
+      properties:
+        key: { type: string }
+        label: { type: string, description: Label as printed on the device (not translated) }
+        value: { type: number }
+        unit:
+          type: string
+          enum: [knob, db, hz, ms, enum, bool]
+        min: { type: number }
+        max: { type: number }
+        options:
+          type: array
+          description: Labels for enum units, indexed by value.
+          items: { type: string }
+
+    DeviceBlock:
+      type: object
+      required: [slot, enabled, model, params, confidence, alternatives]
+      properties:
+        slot: { type: string, examples: [NR, PRE, WAH, DST, NS, AMP, CAB, EQ, MOD, DLY, RVB, VOL] }
+        enabled: { type: boolean }
+        model:
+          type: object
+          required: [key, name]
+          properties:
+            key: { type: string }
+            name: { type: string, description: Model label shown on the device }
+            based_on: { type: [string, "null"] }
+        params:
+          type: array
+          items: { $ref: "#/components/schemas/DeviceParam" }
+        intent_block_id: { type: [string, "null"] }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        alternatives:
+          type: array
+          items:
+            type: object
+            required: [model_key, name]
+            properties:
+              model_key: { type: string }
+              name: { type: string }
+
+    Preset:
+      type: object
+      required: [id, device_key, title, current_version, versions]
+      properties:
+        id: { type: string }
+        device_key: { type: string }
+        title: { type: string }
+        current_version: { type: integer }
+        versions:
+          type: array
+          items:
+            type: object
+            required: [version, created_at, created_by]
+            properties:
+              version: { type: integer }
+              created_at: { type: string, format: date-time }
+              created_by: { type: string, enum: [generator, user_edit, match] }
+
+    PresetVersion:
+      type: object
+      required: [preset_id, version, device_key, catalog_version, name, patch_volume, chain, explanation, validation, download]
+      properties:
+        preset_id: { type: string }
+        version: { type: integer }
+        device_key: { type: string }
+        catalog_version: { type: string }
+        name: { type: string, maxLength: 12 }
+        patch_volume: { type: number }
+        bpm: { type: [integer, "null"] }
+        chain:
+          type: array
+          description: Blocks in signal order.
+          items: { $ref: "#/components/schemas/DeviceBlock" }
+        explanation: { type: string, description: Localized explanation of the mapping }
+        validation:
+          type: object
+          required: [ok, checks]
+          properties:
+            ok: { type: boolean }
+            checks:
+              type: array
+              items:
+                type: object
+                required: [code, ok]
+                properties:
+                  code:
+                    type: string
+                    enum: [catalog_models, parameter_ranges, chain_order, engine_tags, output_level]
+                  ok: { type: boolean }
+        download:
+          type: object
+          required: [available]
+          properties:
+            available: { type: boolean }
+            filename: { type: [string, "null"] }
+            reason:
+              type: [string, "null"]
+              enum: [demo_mode, validation_failed, format_unverified, null]
+
+    FeedbackCreate:
+      type: object
+      required: [usefulness]
+      properties:
+        usefulness: { type: integer, minimum: 1, maximum: 5 }
+        closeness: { type: [integer, "null"], minimum: 1, maximum: 5 }
+        tags:
+          type: array
+          items:
+            type: string
+            enum: [too_much_gain, too_little_gain, too_bright, too_dark, too_boomy, too_thin, wrong_effects, too_much_ambience, great_starting_point]
+        comment: { type: [string, "null"], maxLength: 1000 }

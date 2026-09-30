@@ -1,0 +1,46 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# testing
+/coverage
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# next.js
+/.next/
+/out/
+/build
+
+# misc
+.DS_Store
+Thumbs.db
+*.pem
+.idea/
+.vscode/
+
+# local Claude Code preview config (machine-specific paths)
+.claude/launch.json
+
+# debug
+npm-debug.log*
+
+# env files — commit only the example
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# Third-party / copyrighted fixtures (factory presets, song excerpts, RE dumps) — never commit
+tests/fixtures/private/
+
+# Device catalog extracted verbatim from a local Valeton Suite installation
+data/devices/*/extracted/
