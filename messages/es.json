@@ -1,0 +1,786 @@
+{
+  "Metadata": {
+    "title": "ToneProfile — De la canción al tono",
+    "titleTemplate": "%s · ToneProfile",
+    "description": "ToneProfile investiga el equipo, mide la grabación y construye un preset para tu procesador de guitarra — empezando por la Valeton GP-180 — y te dice exactamente qué tan seguro está."
+  },
+  "Common": {
+    "appName": "ToneProfile",
+    "skipToContent": "Saltar al contenido",
+    "demoBadge": "Demo",
+    "demoBadgeLong": "Demo · análisis simulado",
+    "demoExplanation": "Esta demo usa un backend simulado con canciones ficticias y fuentes inventadas. La interfaz, el flujo y la forma de los datos son reales; los resultados del análisis no.",
+    "language": "Idioma",
+    "locales": {
+      "en": "English",
+      "es": "Español"
+    },
+    "retry": "Reintentar",
+    "cancel": "Cancelar",
+    "back": "Volver",
+    "close": "Cerrar",
+    "print": "Imprimir",
+    "loading": "Cargando…",
+    "seconds": "{value, number} s",
+    "percent": "{value, number, percent}",
+    "confidence": "Confianza",
+    "confidenceValue": "{value, number, percent} de confianza",
+    "unknownError": "Algo falló de nuestro lado.",
+    "networkError": "No podemos conectar con ToneProfile. Revisa tu conexión e inténtalo de nuevo.",
+    "newTab": "(se abre en una pestaña nueva)"
+  },
+  "Nav": {
+    "primary": "Principal",
+    "library": "Biblioteca",
+    "newTone": "Nuevo tono",
+    "howItWorks": "Cómo funciona",
+    "limits": "Límites",
+    "startTone": "Crear un tono",
+    "signIn": "Iniciar sesión",
+    "home": "Inicio de ToneProfile",
+    "examples": "Ejemplos",
+    "methodology": "Metodología"
+  },
+  "Evidence": {
+    "levels": {
+      "confirmed": "Confirmado",
+      "reported": "Reportado",
+      "likely": "Probable",
+      "inferred": "Inferido",
+      "unknown": "Desconocido"
+    },
+    "descriptions": {
+      "confirmed": "Lo dice el artista o una fuente de primera mano sobre esta grabación.",
+      "reported": "Prensa creíble sobre el equipo del artista, no específica de esta grabación.",
+      "likely": "Varias fuentes coherentes, o evidencia clara en el audio.",
+      "inferred": "Deducido del estilo, la época o el audio — ninguna fuente lo afirma.",
+      "unknown": "No pudimos averiguarlo. No vamos a adivinar."
+    },
+    "specificity": {
+      "this_recording": "Sobre esta grabación",
+      "artist_general": "Sobre el equipo del artista en general"
+    },
+    "basis": {
+      "measured": "Medido",
+      "research": "Investigación",
+      "inferred": "Inferido"
+    }
+  },
+  "Taxonomy": {
+    "roles": {
+      "gate": "Puerta de ruido",
+      "compressor": "Compresor",
+      "boost": "Boost",
+      "drive": "Overdrive",
+      "fuzz": "Fuzz",
+      "pitch": "Pitch",
+      "wah": "Wah",
+      "amp": "Ampli",
+      "cab": "Gabinete",
+      "eq": "EQ",
+      "modulation": "Modulación",
+      "delay": "Delay",
+      "reverb": "Reverb",
+      "volume": "Volumen"
+    },
+    "archetypes": {
+      "fender_tweed": "Combo estilo tweed",
+      "fender_blackface_clean": "Limpio estilo blackface",
+      "vox_ac_topboost": "AC top-boost",
+      "british_plexi": "Plexi británico",
+      "british_high_gain": "Británico de alta ganancia",
+      "american_high_gain_modern": "Alta ganancia americano moderno",
+      "dumble_style": "Estilo Dumble",
+      "boutique_edge": "Boutique al borde de la saturación",
+      "jazz_solid_state_clean": "Limpio de transistores para jazz",
+      "acoustic_sim": "Simulación acústica",
+      "ts_style_boost": "Boost estilo TS",
+      "klon_style": "Overdrive estilo Klon",
+      "rat_style_distortion": "Distorsión estilo RAT",
+      "muff_style_fuzz": "Fuzz estilo Muff",
+      "fuzz_face_style": "Estilo Fuzz Face",
+      "octave_fuzz": "Fuzz de octava",
+      "clean_boost": "Boost limpio",
+      "compressor": "Compresor",
+      "noise_gate": "Puerta de ruido",
+      "open_back_1x12": "1×12 abierto",
+      "open_back_2x12": "2×12 abierto",
+      "closed_back_4x12": "4×12 cerrado",
+      "room": "Habitación",
+      "plate": "Placa",
+      "spring": "Resorte",
+      "hall": "Sala",
+      "shimmer": "Shimmer",
+      "digital_delay": "Delay digital",
+      "analog_delay": "Delay analógico",
+      "tape_delay": "Delay de cinta",
+      "dotted_eighth_delay": "Delay de corchea con puntillo",
+      "chorus": "Chorus",
+      "phaser": "Phaser",
+      "flanger": "Flanger",
+      "uni_vibe": "Uni-Vibe",
+      "tremolo": "Trémolo",
+      "rotary": "Rotativo"
+    },
+    "gainClass": {
+      "clean": "Limpio",
+      "edge_of_breakup": "Al borde de la saturación",
+      "crunch": "Crunch",
+      "high_gain": "Alta ganancia",
+      "fuzz": "Fuzz"
+    },
+    "reverbAmount": {
+      "none": "Sin reverb",
+      "low": "Poca reverb",
+      "medium": "Reverb media",
+      "high": "Mucha reverb"
+    },
+    "subdivision": {
+      "quarter": "negra",
+      "dotted_eighth": "corchea con puntillo",
+      "eighth": "corchea"
+    },
+    "modulation": {
+      "chorus": "Chorus",
+      "phaser": "Phaser",
+      "flanger": "Flanger",
+      "tremolo": "Trémolo",
+      "vibrato": "Vibrato"
+    },
+    "pickupConfig": {
+      "sss": "Tres bobinas simples (SSS)",
+      "hss": "Humbucker + dos simples (HSS)",
+      "hh": "Dos humbuckers (HH)",
+      "ss": "Dos bobinas simples (SS)",
+      "p90": "P-90",
+      "single_humbucker": "Un humbucker",
+      "other": "Otra"
+    },
+    "pickupPosition": {
+      "neck": "Mástil",
+      "middle": "Central",
+      "bridge": "Puente",
+      "neck_middle": "Mástil + central",
+      "middle_bridge": "Central + puente",
+      "neck_bridge": "Mástil + puente"
+    },
+    "tuning": {
+      "standard": "Mi estándar",
+      "eb_standard": "Mi♭ estándar",
+      "drop_d": "Drop D",
+      "d_standard": "Re estándar",
+      "drop_c": "Drop C",
+      "open_g": "Sol abierto",
+      "open_d": "Re abierto",
+      "other": "Otra"
+    },
+    "section": {
+      "intro": "Intro",
+      "verse": "Estrofa",
+      "chorus": "Coro",
+      "riff": "Riff principal",
+      "solo": "Solo",
+      "clean_part": "Parte limpia"
+    }
+  },
+  "Landing": {
+    "hero": {
+      "eyebrow": "Investigación de tono · medición · presets",
+      "title": "De la canción al tono.",
+      "lede": "Elige una canción. ToneProfile investiga el equipo, mide la grabación y construye un preset para tu procesador de guitarra — y te muestra exactamente qué tan seguro está.",
+      "primaryCta": "Crear un tono",
+      "secondaryCta": "Ver cómo funciona",
+      "deviceNote": "Primer dispositivo: Valeton GP-180",
+      "illustration": "Ilustración del proceso de análisis con una canción ficticia.",
+      "replay": "Repetir la ilustración"
+    },
+    "how": {
+      "eyebrow": "Cómo funciona",
+      "title": "Cuatro capas entre un disco y tu pedalera.",
+      "steps": {
+        "reference": {
+          "title": "Referencia",
+          "body": "Una canción y, si quieres, un fragmento corto que tú subes. Nunca descargamos música por ti."
+        },
+        "evidence": {
+          "title": "Evidencia",
+          "body": "Qué equipo usó el artista según fuentes documentadas — con enlaces — y lo que medimos en el audio."
+        },
+        "intent": {
+          "title": "Perfil de tono",
+          "body": "Una descripción independiente del dispositivo: cadena de señal, carácter del ampli, ganancia, ecualización y ambiente."
+        },
+        "device": {
+          "title": "Tu dispositivo",
+          "body": "Un motor determinista traduce el perfil a modelos y valores de perillas reales de tu procesador."
+        }
+      }
+    },
+    "evidence": {
+      "eyebrow": "Evidencia, no conjeturas",
+      "title": "Cada afirmación muestra su confianza y su fuente.",
+      "body": "A las herramientas de IA les encanta sonar seguras. ToneProfile separa lo documentado, lo medido y lo inferido — y dice “desconocido” cuando esa es la respuesta honesta."
+    },
+    "translation": {
+      "eyebrow": "La traducción",
+      "title": "Un tono. Reconstruido con los modelos que tu dispositivo sí tiene.",
+      "body": "Las posiciones de las perillas no se trasladan entre amplis. Por eso no copiamos números: asignamos cada bloque del perfil al modelo más cercano de tu dispositivo y calculamos sus ajustes.",
+      "universal": "Perfil de tono",
+      "device": "Valeton GP-180"
+    },
+    "device": {
+      "eyebrow": "Primero, un solo dispositivo",
+      "title": "Valeton GP-180, bien hecho.",
+      "body": "Un preset descargable para Valeton Suite, una hoja de ajustes imprimible e instrucciones de importación. Otros procesadores usarán el mismo perfil de tono — cuando también podamos hacerlos bien.",
+      "points": {
+        "file": "Archivo de preset para importar con Valeton Suite",
+        "sheet": "Hoja de ajustes con cada bloque y perilla",
+        "versions": "Versiones que puedes comparar y valorar"
+      }
+    },
+    "limits": {
+      "eyebrow": "Lo que no puede hacer",
+      "title": "Un preset es un punto de partida, no una máquina del tiempo.",
+      "items": {
+        "hands": "Tus manos, tu guitarra y tus cuerdas son parte del tono. Preguntamos por tus pastillas y compensamos — no podemos reemplazar la práctica.",
+        "studio": "Los discos se mezclan, se doblan y se masterizan. Describimos el sonido de la guitarra, no el del estudio.",
+        "uncertain": "Algunos equipos simplemente no están documentados. Cuando pasa, te lo decimos y nos apoyamos en lo que podemos medir."
+      }
+    },
+    "cta": {
+      "title": "¿Escuchaste algo que quieres tocar?",
+      "button": "Crear un tono"
+    }
+  },
+  "SignIn": {
+    "title": "Las cuentas llegan con la alfa privada",
+    "body": "Por ahora puedes explorar ToneProfile como invitado. Tus tonos se guardan solo en este navegador.",
+    "continue": "Continuar como invitado",
+    "privacy": "Cómo tratamos tus datos"
+  },
+  "Library": {
+    "title": "Biblioteca",
+    "lede": "Todos los tonos que has generado, del más reciente al más antiguo.",
+    "empty": {
+      "title": "Todavía no hay tonos",
+      "body": "Empieza con una canción que quieras tocar. Toma más o menos un minuto.",
+      "cta": "Crear un tono"
+    },
+    "columns": {
+      "song": "Canción",
+      "device": "Dispositivo",
+      "status": "Estado",
+      "created": "Creado"
+    },
+    "audioAttached": "Con fragmento",
+    "noSong": "Fragmento subido",
+    "loadError": "No pudimos cargar tu biblioteca."
+  },
+  "Status": {
+    "queued": "En cola",
+    "running": "Analizando",
+    "ready": "Listo",
+    "failed": "Falló",
+    "cancelled": "Cancelado"
+  },
+  "Create": {
+    "title": "Nuevo tono",
+    "lede": "Cuéntanos cómo quieres sonar y qué tocas. Todo, excepto la canción, es opcional.",
+    "reference": {
+      "title": "Referencia",
+      "songLabel": "Canción",
+      "songPlaceholder": "Busca por canción o artista",
+      "songHint": "Escribe al menos dos caracteres.",
+      "searching": "Buscando…",
+      "noResults": "No encontramos canciones para “{query}”.",
+      "demoCatalog": "El catálogo de la demo solo tiene canciones ficticias, por ejemplo “Northern Lights” o “Iron Parade”.",
+      "selected": "Canción seleccionada",
+      "change": "Cambiar",
+      "sectionLabel": "¿Qué parte?",
+      "sectionAny": "La parte más representativa",
+      "excerptLabel": "Fragmento (opcional)",
+      "excerptHint": "Sube una grabación que tengas derecho a usar. Analizamos hasta 90 segundos, borramos el audio en menos de 24 horas y guardamos solo las mediciones.",
+      "dropTitle": "Suelta un archivo de audio",
+      "dropBody": "WAV, FLAC, MP3, M4A u OGG · hasta 20 MB · de 5 s a 10 min",
+      "browse": "Elegir archivo",
+      "decoding": "Leyendo el audio…",
+      "remove": "Quitar fragmento",
+      "window": "Ventana analizada",
+      "windowStart": "Inicio",
+      "windowLength": "Duración",
+      "windowSummary": "{start} → {end} · {length}",
+      "windowHelp": "Elige un pasaje donde la guitarra se escuche con claridad. Los solos y las intros funcionan mejor.",
+      "rights": "Soy dueño de esta grabación o tengo derecho a usarla para analizarla.",
+      "fileName": "{name} · {duration}",
+      "rightsPolicy": "Cómo tratamos tu audio"
+    },
+    "guitar": {
+      "title": "Tu guitarra",
+      "lede": "Las pastillas cambian cómo responde un preset. Lo compensamos.",
+      "pickupConfig": "Pastillas",
+      "pickupPosition": "Posición que usarás",
+      "tuning": "Afinación"
+    },
+    "device": {
+      "title": "Dispositivo",
+      "available": "Disponible",
+      "planned": "Próximamente",
+      "plannedNote": "Otros dispositivos usarán los mismos perfiles de tono."
+    },
+    "summary": {
+      "title": "Resumen",
+      "song": "Canción",
+      "excerpt": "Fragmento",
+      "noExcerpt": "Ninguno — solo investigación",
+      "guitar": "Guitarra",
+      "device": "Dispositivo",
+      "noSong": "Sin seleccionar",
+      "submit": "Analizar tono",
+      "needsReference": "Elige una canción o sube un fragmento para continuar.",
+      "phase": {
+        "uploading": "Subiendo el fragmento…",
+        "checking": "Revisando el audio…",
+        "starting": "Iniciando el análisis…"
+      }
+    },
+    "errors": {
+      "rightsRequired": "Confirma que tienes derecho a usar esta grabación.",
+      "windowTooShort": "Selecciona al menos 5 segundos.",
+      "windowTooLong": "Selecciona 90 segundos o menos.",
+      "unsupported_format": "Este tipo de archivo no es compatible. Usa WAV, FLAC, MP3, M4A u OGG.",
+      "file_too_large": "El archivo pesa más de 20 MB. Recórtalo o exporta un fragmento más corto.",
+      "audio_too_short": "El audio dura menos de 5 segundos.",
+      "audio_too_long": "El audio dura más de 10 minutos. Exporta solo la parte que necesitas.",
+      "invalid_audio": "No pudimos leer este archivo. Puede estar dañado o no ser audio.",
+      "decodeUnavailable": "Tu navegador no puede previsualizar este archivo, pero igual puedes subirlo."
+    }
+  },
+  "Generation": {
+    "title": "Análisis de tono",
+    "forSong": "{title} — {artist}",
+    "fromExcerpt": "Fragmento subido",
+    "railLabel": "Proceso de análisis",
+    "elapsed": "Transcurrido {time}",
+    "typical": "Suele tardar {p50}–{p90}",
+    "slower": "Está tardando más de lo habitual. Seguimos trabajando.",
+    "cancel": "Cancelar análisis",
+    "cancelling": "Cancelando…",
+    "backToLibrary": "Volver a la biblioteca",
+    "startOver": "Crear un tono nuevo",
+    "notFound": "No encontramos este análisis.",
+    "live": {
+      "stepRunning": "{step}: en curso",
+      "stepDone": "{step}: listo",
+      "ready": "Tu tono está listo.",
+      "failed": "El análisis se detuvo: {reason}"
+    },
+    "steps": {
+      "resolve_song": {
+        "title": "Canción",
+        "description": "Identificar la grabación exacta"
+      },
+      "analyze_audio": {
+        "title": "Audio",
+        "description": "Aislar la guitarra y medir el fragmento"
+      },
+      "research_gear": {
+        "title": "Investigación",
+        "description": "Buscar el equipo documentado, con fuentes"
+      },
+      "draft_intent": {
+        "title": "Perfil de tono",
+        "description": "Describir el tono sin depender de ningún dispositivo"
+      },
+      "map_to_device": {
+        "title": "Traducción",
+        "description": "Elegir modelos y calcular ajustes para tu dispositivo"
+      },
+      "validate_patch": {
+        "title": "Validación",
+        "description": "Revisar cada valor contra el catálogo del dispositivo"
+      },
+      "build_preset": {
+        "title": "Preset",
+        "description": "Construir el preset y la hoja de ajustes"
+      }
+    },
+    "stepStatus": {
+      "pending": "En espera",
+      "running": "En curso",
+      "done": "Listo",
+      "skipped": "Omitido",
+      "failed": "Falló"
+    },
+    "summary": {
+      "song": "{title} — {artist}",
+      "audio": "{seconds, number} s analizados · {gain} ({p, number, percent})",
+      "audioSeparation": "guitarra aislada",
+      "research": "{sources, plural, one {# fuente leída} other {# fuentes leídas}} · {kept, plural, one {# afirmación conservada} other {# afirmaciones conservadas}}",
+      "researchDropped": "{dropped, plural, one {# afirmación no verificada eliminada} other {# afirmaciones no verificadas eliminadas}}",
+      "intent": "{blocks, plural, one {# bloque} other {# bloques}} · {amp}",
+      "mapping": "{candidates, plural, one {# candidato evaluado} other {# candidatos evaluados}}",
+      "mappingError": "error espectral de {value, number} dB",
+      "validation": "{passed}/{total} comprobaciones superadas",
+      "preset": "{bytes, number} bytes",
+      "presetNoFile": "Hoja de ajustes lista"
+    },
+    "skippedReason": {
+      "resolve_song": "No se eligió canción",
+      "analyze_audio": "No se subió fragmento",
+      "research_gear": "Necesita una canción"
+    },
+    "warnings": {
+      "title": "Conviene saber",
+      "research_unavailable": "No pudimos investigar el equipo de esta canción, así que el perfil se basa en el audio y en inferencias. La confianza es menor.",
+      "multiple_guitars": "Escuchamos más de una guitarra. Seguimos la más prominente.",
+      "low_quality_audio": "El fragmento es de baja calidad o está muy comprimido; las mediciones son menos fiables."
+    },
+    "cancelled": {
+      "title": "Análisis cancelado",
+      "body": "No se guardó nada de este tono."
+    }
+  },
+  "Problems": {
+    "unsupported_format": {
+      "title": "Archivo no compatible",
+      "body": "Usa WAV, FLAC, MP3, M4A u OGG."
+    },
+    "invalid_audio": {
+      "title": "No pudimos leer ese audio",
+      "body": "El archivo puede estar dañado o no ser audio. Intenta exportarlo de nuevo."
+    },
+    "audio_too_short": {
+      "title": "Fragmento demasiado corto",
+      "body": "Necesitamos al menos 5 segundos de guitarra."
+    },
+    "audio_too_long": {
+      "title": "Archivo demasiado largo",
+      "body": "Sube hasta 10 minutos y elige la parte que quieres analizar."
+    },
+    "file_too_large": {
+      "title": "Archivo demasiado grande",
+      "body": "Los archivos deben pesar menos de 20 MB."
+    },
+    "no_guitar_detected": {
+      "title": "No encontramos guitarra en este fragmento",
+      "body": "No pudimos oír una guitarra con suficiente claridad. Elige un pasaje donde la guitarra destaque — una intro o un solo funcionan mejor."
+    },
+    "multiple_guitars": {
+      "title": "Más de una guitarra",
+      "body": "Elige un pasaje donde destaque una sola guitarra."
+    },
+    "low_quality_audio": {
+      "title": "Audio de baja calidad",
+      "body": "Prueba con un archivo de mejor calidad para obtener mediciones más fiables."
+    },
+    "song_not_found": {
+      "title": "Canción no encontrada",
+      "body": "No pudimos identificar esa grabación. Intenta buscarla de nuevo."
+    },
+    "research_unavailable": {
+      "title": "Investigación no disponible",
+      "body": "Ahora mismo no pudimos investigar el equipo de esta canción."
+    },
+    "ai_unavailable": {
+      "title": "Nuestro motor de tono no está disponible por un momento",
+      "body": "Un servicio del que dependemos no respondió. Tus datos están a salvo — inténtalo de nuevo en un momento."
+    },
+    "mapping_failed": {
+      "title": "No pudimos traducir este tono a tu dispositivo",
+      "body": "El motor no encontró ajustes que pasen nuestras comprobaciones de calidad. Lo registramos para mejorar."
+    },
+    "preset_generation_failed": {
+      "title": "No pudimos construir el archivo del preset",
+      "body": "El perfil de tono está bien, pero el archivo del dispositivo no pasó la validación. Nunca entregamos un archivo que no podamos respaldar."
+    },
+    "unsupported_device": {
+      "title": "Dispositivo aún no compatible",
+      "body": "Elige un dispositivo disponible."
+    },
+    "job_timeout": {
+      "title": "Esto tardó demasiado",
+      "body": "El análisis no terminó a tiempo. Continuará desde el último paso completado."
+    },
+    "rate_limited": {
+      "title": "Un poco más despacio",
+      "body": "Alcanzaste el límite de hoy. Inténtalo más tarde."
+    },
+    "not_found": {
+      "title": "No encontrado",
+      "body": "Puede que se haya borrado o que el enlace esté mal."
+    },
+    "unauthorized": {
+      "title": "Inicia sesión",
+      "body": "Tu sesión expiró."
+    },
+    "validation_error": {
+      "title": "Revisa el formulario",
+      "body": "Algunos campos necesitan atención."
+    },
+    "conflict": {
+      "title": "No es posible ahora",
+      "body": "El análisis ya cambió de estado. Actualiza para ver lo último."
+    },
+    "internal": {
+      "title": "Algo falló",
+      "body": "Es de nuestro lado. Inténtalo de nuevo en un momento."
+    },
+    "network": {
+      "title": "Problema de conexión",
+      "body": "No podemos conectar con ToneProfile. Revisa tu conexión e inténtalo de nuevo."
+    },
+    "unknown": {
+      "title": "Algo falló",
+      "body": "Inténtalo de nuevo en un momento."
+    },
+    "actions": {
+      "retry": "Reintentar desde el último paso",
+      "chooseSection": "Elegir otro pasaje",
+      "newTone": "Crear un tono nuevo",
+      "library": "Ir a la biblioteca",
+      "addExcerpt": "Añadir un fragmento"
+    }
+  },
+  "Profile": {
+    "title": "Perfil de tono",
+    "lede": "Lo que encontramos, sin depender de ningún dispositivo.",
+    "overall": "Confianza general",
+    "fingerprint": {
+      "title": "Huella de tono",
+      "description": "Espectro promedio de la guitarra en el fragmento, normalizado en sonoridad. Elige una banda para ver qué significa.",
+      "noAudio": "No se analizó ningún fragmento, así que no hay espectro medido. La próxima vez sube un fragmento para obtener una huella medida.",
+      "axisHz": "Frecuencia (Hz)",
+      "axisDb": "Nivel (dB)",
+      "showTable": "Ver los valores en una tabla",
+      "tableCaption": "Valores del espectro por banda de 1/3 de octava",
+      "bandHeader": "Banda (Hz)",
+      "levelHeader": "Nivel (dB)",
+      "chartLabel": "Gráfico del espectro. Usa los botones de banda debajo para ver detalles.",
+      "bands": {
+        "body": "Cuerpo",
+        "warmth": "Calidez",
+        "mids": "Medios",
+        "bite": "Mordida",
+        "air": "Aire y fizz"
+      },
+      "bandRange": "{from}–{to}",
+      "bandLevel": "{value, number, ::+0.0} dB respecto al promedio",
+      "bandInfo": {
+        "body": "Graves y pegada. Demasiado suena retumbante; muy poco, delgado.",
+        "warmth": "Donde un tono se vuelve grueso o embarrado. Suele recortarse en mezclas densas.",
+        "mids": "El corazón de la guitarra en una banda — donde convive con la voz.",
+        "bite": "Ataque de la púa y presencia. Los tonos que “cortan” la mezcla empujan aquí.",
+        "air": "Brillo en tonos limpios, fizz en los distorsionados. Los gabinetes y micrófonos lo moldean."
+      }
+    },
+    "targets": {
+      "title": "Carácter del tono",
+      "lede": "Objetivos perceptuales que resuelve el motor del dispositivo.",
+      "names": {
+        "saturation": "Saturación",
+        "low_end": "Graves",
+        "mid_emphasis": "Énfasis en medios",
+        "brightness": "Brillo",
+        "tightness": "Definición",
+        "compression": "Compresión",
+        "ambience": "Ambiente"
+      },
+      "value": "{value, number, percent}"
+    },
+    "audio": {
+      "title": "Medido en tu fragmento",
+      "gain": "Ganancia",
+      "delay": "Delay",
+      "delayValue": "{ms, number} ms · {subdivision}",
+      "delayNone": "No se detectó delay",
+      "modulation": "Modulación",
+      "modulationValue": "{kind} · {rate, number} Hz",
+      "modulationNone": "No se detectó modulación",
+      "reverb": "Reverb",
+      "dominance": "Presencia de la guitarra",
+      "separated": "Guitarra aislada de la mezcla",
+      "notSeparated": "Analizado tal como se grabó"
+    },
+    "chain": {
+      "title": "Cadena de señal",
+      "lede": "Independiente del dispositivo: cada bloque es un rol y un arquetipo.",
+      "alternatives": "Alternativas: {list}",
+      "bypassed": "Apagado"
+    },
+    "evidence": {
+      "title": "Evidencia",
+      "lede": "Afirmaciones sobre el equipo encontradas en la investigación. Eliminamos las que no pudimos verificar en su fuente.",
+      "empty": "No hay equipo documentado para esta canción. El perfil se basa en el audio y en inferencias.",
+      "sources": "{count, plural, one {# fuente} other {# fuentes}}",
+      "retrieved": "Consultada el {date}",
+      "quote": "Cita",
+      "openSource": "Abrir fuente",
+      "howLink": "Cómo funcionan los niveles de evidencia"
+    }
+  },
+  "Preset": {
+    "title": "Preset",
+    "lede": "El perfil de tono, reconstruido con los modelos que tiene tu dispositivo.",
+    "version": "Versión {version}",
+    "deviceNames": {
+      "valeton_gp180": "Valeton GP-180"
+    },
+    "view": {
+      "label": "Vista",
+      "universal": "Perfil de tono",
+      "device": "Dispositivo"
+    },
+    "blocks": "Bloques",
+    "off": "Apagado",
+    "inspect": "Inspeccionar {slot}",
+    "basedOn": "Basado en {name}",
+    "alternatives": "También encaja bien",
+    "noAlternatives": "No hay alternativas cercanas en este dispositivo.",
+    "patchVolume": "Volumen del patch",
+    "explanationTitle": "Por qué estas elecciones",
+    "validation": {
+      "title": "Comprobaciones",
+      "ok": "Todas las comprobaciones superadas",
+      "failed": "Algunas comprobaciones fallaron",
+      "checks": {
+        "catalog_models": "Los modelos existen en este dispositivo y firmware",
+        "parameter_ranges": "Todos los valores dentro de rango",
+        "chain_order": "Orden de la cadena aceptado por el dispositivo",
+        "engine_tags": "Ajustes internos del motor verificados",
+        "output_level": "Nivel de salida seguro"
+      }
+    },
+    "download": {
+      "button": "Descargar {filename}",
+      "generic": "Descargar preset",
+      "unavailable": {
+        "demo_mode": "Los archivos de preset los produce el motor de ToneProfile y no están disponibles en la demo. La hoja de ajustes tiene todos los valores.",
+        "validation_failed": "Esta versión no pasó la validación, así que no te daremos un archivo.",
+        "format_unverified": "La exportación de archivos para este dispositivo aún se está verificando en hardware. Usa la hoja de ajustes por ahora."
+      }
+    },
+    "sheet": {
+      "open": "Abrir hoja de ajustes",
+      "title": "Hoja de ajustes",
+      "lede": "Cada bloque activo y cada perilla, en orden de señal. Ajústalos a mano en el dispositivo o en Valeton Suite.",
+      "slot": "Bloque",
+      "model": "Modelo",
+      "settings": "Ajustes",
+      "disabled": "Dejar apagado",
+      "generatedFor": "{song} · {device} · versión {version}",
+      "back": "Volver al resultado"
+    },
+    "import": {
+      "title": "Importar en tu GP-180",
+      "steps": {
+        "connect": "Conecta la GP-180 a tu computador por USB y abre Valeton Suite.",
+        "slot": "Elige un espacio de patch de usuario vacío para no sobrescribir un preset que te importe.",
+        "import": "Usa la función de importar patch de Valeton Suite y elige el archivo .prst descargado.",
+        "level": "Toca primero a volumen moderado y ajusta el volumen del patch para igualarlo con tus otros presets.",
+        "compare": "Si un valor se ve distinto en el dispositivo, confía en la hoja de ajustes y cuéntanoslo en la valoración."
+      }
+    }
+  },
+  "Feedback": {
+    "title": "¿Qué tan cerca quedó?",
+    "lede": "Pruébalo primero en tu dispositivo. Tu valoración ajusta las prioridades del motor, no tus datos.",
+    "usefulness": "Utilidad como punto de partida",
+    "scale": {
+      "1": "No sirve",
+      "2": "Necesita mucho trabajo",
+      "3": "Útil con ajustes",
+      "4": "Cerca",
+      "5": "Clavado"
+    },
+    "tagsLabel": "¿Qué cambiarías?",
+    "tags": {
+      "too_much_gain": "Demasiada ganancia",
+      "too_little_gain": "Poca ganancia",
+      "too_bright": "Demasiado brillante",
+      "too_dark": "Demasiado oscuro",
+      "too_boomy": "Demasiados graves",
+      "too_thin": "Demasiado delgado",
+      "wrong_effects": "Efectos equivocados",
+      "too_much_ambience": "Demasiado ambiente",
+      "great_starting_point": "Gran punto de partida"
+    },
+    "comment": "¿Algo más? (opcional)",
+    "submit": "Enviar valoración",
+    "sending": "Enviando…",
+    "thanks": "Gracias — anotado para la versión {version}.",
+    "error": "No pudimos enviar tu valoración. Inténtalo de nuevo."
+  },
+  "Result": {
+    "readyTitle": "Tu tono está listo",
+    "sections": "Secciones del resultado",
+    "jump": {
+      "profile": "Perfil de tono",
+      "preset": "Preset",
+      "feedback": "Valoración"
+    },
+    "summaryTitle": "En resumen",
+    "proseLanguage": "Redactado en {language} cuando se generó este tono."
+  },
+  "NotFound": {
+    "title": "Nada en este canal",
+    "body": "La página que buscas no existe.",
+    "home": "Volver a ToneProfile"
+  },
+  "ErrorPage": {
+    "title": "Se perdió la señal",
+    "body": "Algo falló al mostrar esta página.",
+    "retry": "Reintentar"
+  },
+  "Lab": {
+    "title": "Laboratorio del sistema de diseño"
+  },
+  "Footer": {
+    "label": "Sitio",
+    "product": "Producto",
+    "legal": "Legal",
+    "examples": "Ejemplos",
+    "methodology": "Metodología",
+    "newTone": "Crear un tono",
+    "privacy": "Privacidad",
+    "terms": "Términos de uso",
+    "audio": "Audio y derechos",
+    "disclaimer": "ToneProfile es independiente y no está afiliado a Valeton ni a ningún artista. Los nombres de productos y artistas se usan de forma descriptiva.",
+    "license": "Código abierto bajo Apache-2.0."
+  },
+  "LandingExamples": {
+    "eyebrow": "Ejemplos",
+    "title": "Mira resultados completos antes de probar.",
+    "body": "Tres ejemplos terminados, incluido uno en el que la investigación no encontró nada y ToneProfile lo dice. Las canciones y las fuentes son ficticias.",
+    "cta": "Ver ejemplos"
+  },
+  "Examples": {
+    "metaTitle": "Ejemplos",
+    "metaDescription": "Resultados completos de ToneProfile: cadena de señal, perfil de tono, evidencia y un preset para el GP-180.",
+    "eyebrow": "Ejemplos",
+    "title": "Resultados completos, también lo que no es seguro.",
+    "lede": "Cada ejemplo es un análisis terminado: el proceso, el perfil de tono con su evidencia y el preset para el GP-180. Uno está degradado a propósito, para mostrar cómo se comporta ToneProfile cuando sabe menos.",
+    "fictional": "Ejemplos ilustrativos: las canciones, los artistas y las fuentes son ficticios.",
+    "listLabel": "Ejemplos",
+    "card": {
+      "excerpt": "Fragmento medido",
+      "researchOnly": "Solo investigación",
+      "degraded": "Menor confianza",
+      "open": "Abrir ejemplo"
+    },
+    "detail": {
+      "eyebrow": "Ejemplo",
+      "back": "Todos los ejemplos",
+      "note": "Ejemplo ilustrativo con una canción ficticia. El proceso, los datos y el preset se muestran igual que en un resultado real.",
+      "ctaTitle": "¿Lo quieres para una canción que tocas?",
+      "cta": "Crear un tono"
+    },
+    "empty": "No hay ejemplos disponibles en este momento."
+  },
+  "Longform": {
+    "toc": "En esta página",
+    "updated": "Última actualización: {date}",
+    "draftTitle": "Borrador — pendiente de revisión legal",
+    "draftBody": "Este texto describe cómo está diseñado ToneProfile. Aún no lo ha revisado un abogado y se cerrará antes de la alfa privada.",
+    "related": "Relacionado"
+  }
+}
