@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { toApiError } from "@/lib/api/errors";
 import { formatParamValue } from "@/lib/format/params";
+import { NAV_BACK, SharedElement, sharedName } from "@/motion/view-transitions";
 import { Button, ButtonLink } from "@/ui/button";
 import { ArrowLeft, Printer } from "@/ui/icons";
 import { PageSkeleton } from "@/ui/skeleton";
@@ -39,7 +40,7 @@ export function DialInSheet({ generationId, backHref }: { generationId: string; 
   return (
     <article className="mx-auto max-w-4xl print:max-w-none">
       <div className="no-print mb-8 flex flex-wrap items-center justify-between gap-3">
-        <ButtonLink href={backHref} variant="ghost" size="sm" className="-ml-3">
+        <ButtonLink href={backHref} transitionTypes={NAV_BACK} variant="ghost" size="sm" className="-ml-3">
           <ArrowLeft />
           {t("sheet.back")}
         </ButtonLink>
@@ -51,7 +52,9 @@ export function DialInSheet({ generationId, backHref }: { generationId: string; 
 
       <header className="border-b border-line pb-6 print:border-black">
         <p className="label print:!text-black">{t("sheet.title")}</p>
-        <h1 className="mt-2 font-mono text-3xl tracking-tight">{data.name}</h1>
+        <SharedElement name={sharedName("preset", data.preset_id, String(data.version))}>
+          <h1 className="mt-2 font-mono text-3xl tracking-tight">{data.name}</h1>
+        </SharedElement>
         <p className="mt-2 text-ink-muted print:text-black">
           {t("sheet.generatedFor", { song: song ? `${song.title} — ${song.artist}` : "—", device, version: data.version })}
         </p>

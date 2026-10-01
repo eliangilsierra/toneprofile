@@ -55,13 +55,53 @@
   --radius-md: 10px;
   --radius-lg: 16px;
 
-  /* Motion (mirrors src/motion/tokens.ts) */
+  /* Motion (mirrors src/motion/tokens.ts — docs/frontend/motion-system.md) */
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-out-emph: cubic-bezier(0.05, 0.7, 0.1, 1);
   --ease-in-emph: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --ease-linear: linear;
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
 
   --animate-signal-flow: signal-flow 1.6s linear infinite;
   --animate-signal-breathe: signal-breathe 2.4s var(--ease-standard) infinite;
+  /* A pulse of signal travelling along a connector (transform only: runs on the compositor). */
+  --animate-signal-travel: signal-travel 0.9s var(--ease-linear) infinite;
+  --animate-signal-travel-y: signal-travel-y 0.9s var(--ease-linear) infinite;
+  /* Indeterminate scan over a measured excerpt: activity, never progress. */
+  --animate-scan: scan 2.4s var(--ease-standard) infinite;
+
+  @keyframes signal-travel {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  @keyframes signal-travel-y {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(100%);
+    }
+  }
+
+  @keyframes scan {
+    0% {
+      transform: translateX(-10%);
+      opacity: 0;
+    }
+    15%,
+    85% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(110%);
+      opacity: 0;
+    }
+  }
 
   @keyframes signal-flow {
     from {
@@ -85,11 +125,31 @@
 
 :root {
   --duration-instant: 80ms;
-  --duration-fast: 140ms;
+  --duration-micro: 120ms;
+  --duration-fast: 160ms;
   --duration-base: 220ms;
   --duration-slow: 360ms;
+  --duration-deliberate: 560ms;
   --duration-signal: 900ms;
+  --duration-ambient: 2400ms;
   color-scheme: dark;
+}
+
+/* Registered so the pointer light can transition smoothly between positions and fade. */
+@property --edge-x {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: -999px;
+}
+@property --edge-y {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: -999px;
+}
+@property --edge-opacity {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
 }
 
 @layer base {
@@ -170,9 +230,294 @@
   .hairline {
     border-color: var(--color-line);
   }
+
+  /* One pulse travelling along a connector; pair with a positioned, overflow-hidden parent. */
+  .signal-pulse {
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      transparent 35%,
+      var(--color-signal) 50%,
+      transparent 65%,
+      transparent 100%
+    );
+    animation: var(--animate-signal-travel);
+    will-change: transform;
+  }
+  .signal-pulse-y {
+    background-image: linear-gradient(
+      180deg,
+      transparent 0%,
+      transparent 35%,
+      var(--color-signal) 50%,
+      transparent 65%,
+      transparent 100%
+    );
+    animation: var(--animate-signal-travel-y);
+    will-change: transform;
+  }
+
+  /* Loading placeholder: faint light travelling in the signal direction (activity, not progress). */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--color-surface-2);
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(90deg, transparent 20%, rgb(255 255 255 / 0.045) 50%, transparent 80%);
+    animation: signal-travel 1.8s var(--ease-standard) infinite;
+  }
+
+  /*
+   * LED ladder: lit segments start dark and switch on in order once the meter has been seen
+   * (data-seen). With reduced motion they are simply lit. Meters only render with fetched data, so
+   * the client is always hydrated when they appear.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    .led-meter:not([data-seen]) .led-on {
+      background-color: var(--color-surface-3);
+    }
+    .led-meter[data-seen] .led-on {
+      animation: led-on var(--duration-micro) var(--ease-standard) both;
+      animation-delay: calc(var(--led-index) * 30ms);
+    }
+  }
+  @keyframes led-on {
+    from {
+      background-color: var(--color-surface-3);
+    }
+  }
+
+  /* Indeterminate scan across a passage; paused while off-screen or in a hidden tab. */
+  .scan {
+    animation: var(--animate-scan);
+    animation-play-state: paused;
+    will-change: transform;
+  }
+  .scan[data-active] {
+    animation-play-state: running;
+  }
+
+  /* Small keyed swaps (icons, labels): arrive from just below. */
+  .swap-in {
+    animation: swap-in var(--duration-fast) var(--ease-standard) both;
+  }
+  @keyframes swap-in {
+    from {
+      opacity: 0;
+      transform: translateY(3px);
+    }
+  }
+
+  /* Strokes that draw themselves once (use with pathLength="1"). */
+  .draw-in {
+    stroke-dasharray: 1;
+    animation: draw-in var(--duration-slow) var(--ease-out-emph) both;
+  }
+  @keyframes draw-in {
+    from {
+      stroke-dashoffset: 1;
+    }
+  }
+
+  /* L1 press feedback: a physical key travelling, not a bounce. */
+  .pressable {
+    transition-property: transform, background-color, border-color, color, box-shadow;
+    transition-duration: var(--duration-micro);
+    transition-timing-function: var(--ease-standard);
+  }
+  .pressable:active:not(:disabled):not([aria-disabled="true"]) {
+    transform: scale(0.98);
+  }
+
+  /* One pass of light across a primary control on hover (fine pointers, motion allowed). */
+  .sheen {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+  .sheen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: linear-gradient(105deg, transparent 30%, rgb(255 255 255 / 0.32) 50%, transparent 70%);
+    transform: translateX(-110%);
+    pointer-events: none;
+  }
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .sheen:hover::after {
+      transform: translateX(110%);
+      transition: transform var(--duration-deliberate) var(--ease-standard);
+    }
+  }
+
+  /*
+   * Pointer light: a thin edge of light that follows a fine pointer across a card (position set by
+   * <PointerLight/>). Touch and reduced-motion users get the plain hover border instead.
+   */
+  .edge-light {
+    position: relative;
+  }
+  .edge-light::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: radial-gradient(
+      220px circle at var(--edge-x) var(--edge-y),
+      rgb(255 178 63 / 0.55),
+      transparent 70%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: var(--edge-opacity);
+    transition: --edge-opacity var(--duration-base) var(--ease-standard);
+    pointer-events: none;
+  }
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .edge-light:hover::before {
+      --edge-opacity: 1;
+    }
+    .lift {
+      transition: transform var(--duration-base) var(--ease-standard);
+    }
+    .lift:hover {
+      transform: translateY(-1px);
+    }
+  }
+}
+
+/*
+ * Scroll-driven reveals (landing only). Pure CSS on the compositor; where unsupported (Firefox
+ * stable today) or with reduced motion, content is simply visible — never hidden.
+ */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .scroll-reveal {
+      animation: scroll-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+    }
+    .scroll-draw {
+      transform-origin: left center;
+      animation: scroll-draw linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 40%;
+    }
+  }
+}
+@keyframes scroll-reveal {
+  from {
+    opacity: 0;
+    translate: 0 24px;
+  }
+}
+@keyframes scroll-draw {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/*
+ * Route transitions (React <ViewTransition>, docs/frontend/motion-system.md §Route transitions).
+ * Forward = deeper into the flow, content arrives from the right like the signal; back = reverse;
+ * untyped navigations (header links, browser back) = a short fade-through. The header and the
+ * page chrome never move.
+ */
+::view-transition {
+  pointer-events: none;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+::view-transition-group(site-header) {
+  animation: none;
+  z-index: 100;
+}
+::view-transition-old(site-header) {
+  display: none;
+}
+::view-transition-new(site-header) {
+  animation: none;
+}
+
+::view-transition-old(.page-fade) {
+  animation: var(--duration-fast) var(--ease-in-emph) both vt-fade reverse;
+}
+::view-transition-new(.page-fade) {
+  animation: var(--duration-base) var(--ease-out-emph) var(--duration-micro) both vt-fade;
+}
+::view-transition-old(.nav-forward) {
+  --vt-offset: -24px;
+  animation:
+    var(--duration-fast) var(--ease-in-emph) both vt-fade reverse,
+    var(--duration-slow) var(--ease-standard) both vt-slide reverse;
+}
+::view-transition-new(.nav-forward) {
+  --vt-offset: 24px;
+  animation:
+    var(--duration-base) var(--ease-out-emph) var(--duration-micro) both vt-fade,
+    var(--duration-slow) var(--ease-standard) both vt-slide;
+}
+::view-transition-old(.nav-back) {
+  --vt-offset: 24px;
+  animation:
+    var(--duration-fast) var(--ease-in-emph) both vt-fade reverse,
+    var(--duration-slow) var(--ease-standard) both vt-slide reverse;
+}
+::view-transition-new(.nav-back) {
+  --vt-offset: -24px;
+  animation:
+    var(--duration-base) var(--ease-out-emph) var(--duration-micro) both vt-fade,
+    var(--duration-slow) var(--ease-standard) both vt-slide;
+}
+/* Shared elements (the excerpt window, titles, the preset name) morph between routes. */
+::view-transition-group(.morph) {
+  animation-duration: var(--duration-slow);
+  animation-timing-function: var(--ease-standard);
+}
+::view-transition-image-pair(.morph) {
+  animation-name: vt-soften;
+}
+
+@keyframes vt-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes vt-slide {
+  from {
+    translate: var(--vt-offset) 0;
+  }
+  to {
+    translate: 0 0;
+  }
+}
+@keyframes vt-soften {
+  40% {
+    filter: blur(2px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
   *,
   *::before,
   *::after {

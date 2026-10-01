@@ -7,12 +7,15 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { Link, useRouter } from "@/i18n/navigation";
 import { toApiError, type ApiError } from "@/lib/api/errors";
 import { queryKeys } from "@/lib/api/keys";
-import type { GenerationCreate } from "@/lib/api/types";
+import type { Generation, GenerationCreate } from "@/lib/api/types";
 import { formatClock } from "@/lib/format/time";
+import { NAV_FORWARD } from "@/motion/view-transitions";
 import { Button } from "@/ui/button";
 import { cn } from "@/ui/cn";
 import { Field, Select } from "@/ui/field";
 import { ArrowRight, Check } from "@/ui/icons";
+import { ActionIcon } from "@/ui/action-icon";
+import { excerptPreviewKey, type ExcerptPreview } from "@/features/generation/excerpt-preview";
 import { ProblemState } from "@/features/shell/problem-state";
 import { ExcerptPicker, type ExcerptValue } from "./excerpt-picker";
 import { createGeneration, uploadReference, useDevices, type SubmitPhase } from "./queries";
@@ -93,7 +96,7 @@ export function CreateToneForm() {
     }
   }, [setValue]);
 
-  const submit = useMutation<string, ApiError, FormValues>({
+  const submit = useMutation<Generation, ApiError, FormValues>({
     mutationFn: async (data) => {
       try {
         window.localStorage.setItem(
@@ -123,11 +126,22 @@ export function CreateToneForm() {
         guitar: { pickup_config: data.pickup_config, pickup_position: data.pickup_position, tuning: data.tuning },
         locale: locale as GenerationCreate["locale"],
       });
-      return generation.id;
+      return generation;
     },
-    onSuccess: async (id) => {
+    onSuccess: async (generation, data) => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.generations });
-      router.push(`/tones/${id}`);
+      // Seed the cache so the analysis page renders in the same commit as the navigation: that is
+      // what lets the selected excerpt window morph into the analysis page (view transition).
+      queryClient.setQueryData(queryKeys.generation(generation.id), generation);
+      const preview = data.excerpt?.preview;
+      if (data.excerpt && preview) {
+        queryClient.setQueryData<ExcerptPreview>(excerptPreviewKey(generation.id), {
+          peaks: preview.peaks,
+          duration: preview.duration,
+          window: data.excerpt.window,
+        });
+      }
+      router.push(`/tones/${generation.id}`, { transitionTypes: NAV_FORWARD });
     },
     onError: () => setPhase(null),
   });
@@ -323,6 +337,7 @@ export function CreateToneForm() {
           )}
 
           <Button type="submit" size="lg" className="mt-6 w-full" disabled={busy} aria-describedby="submit-status">
+            {busy && <ActionIcon state="busy" idle={null} />}
             {busy && phase ? t(`summary.phase.${phase}`) : t("summary.submit")}
             {!busy && <ArrowRight />}
           </Button>

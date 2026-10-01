@@ -1,12 +1,14 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { memo } from "react";
 import type { DeviceBlock, IntentBlock } from "@/lib/api/types";
 import { formatParamValue, paramFraction } from "@/lib/format/params";
 import { EvidenceMark } from "@/ui/evidence-mark";
+import { Knob } from "@/visualization/knob";
 
 /** Detail of one device block: every parameter as a readout, plus provenance and alternatives. */
-export function BlockInspector({ block, intent }: { block: DeviceBlock; intent?: IntentBlock }) {
+export const BlockInspector = memo(function BlockInspector({ block, intent }: { block: DeviceBlock; intent?: IntentBlock }) {
   const t = useTranslations("Preset");
   const tax = useTranslations("Taxonomy");
   const tc = useTranslations("Common");
@@ -32,23 +34,18 @@ export function BlockInspector({ block, intent }: { block: DeviceBlock; intent?:
       )}
 
       {block.params.length > 0 && (
-        <dl className="mt-6 grid gap-x-8 gap-y-4 sm:grid-cols-2">
-          {block.params.map((param) => {
-            const fraction = Math.min(1, Math.max(0, paramFraction(param)));
-            return (
-              <div key={param.key} className="flex flex-wrap items-baseline justify-between gap-x-3">
-                <dt className="label !text-ink-muted">{param.label}</dt>
-                <dd className="font-mono text-lg text-ink tabular">{formatParamValue(param)}</dd>
-                <dd aria-hidden className="relative mt-2 h-1.5 w-full rounded-full bg-surface-3">
-                  <span className="absolute inset-y-0 left-0 rounded-full bg-signal/35" style={{ width: `${fraction * 100}%` }} />
-                  <span
-                    className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-signal bg-canvas"
-                    style={{ left: `${fraction * 100}%` }}
-                  />
-                </dd>
-              </div>
-            );
-          })}
+        // Keyed by block: selecting another block remounts the knobs, so they sweep to their values.
+        <dl key={block.slot} className="mt-6 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+          {block.params.map((param) => (
+            // Visual order: knob · label · value. DOM order keeps term before its descriptions.
+            <div key={param.key} className="flex items-center gap-3">
+              <dt className="label order-2 min-w-0 flex-1 !text-ink-muted">{param.label}</dt>
+              <dd className="order-3 font-mono text-lg text-ink tabular">{formatParamValue(param)}</dd>
+              <dd aria-hidden className="order-1">
+                <Knob fraction={paramFraction(param)} />
+              </dd>
+            </div>
+          ))}
         </dl>
       )}
 
@@ -68,4 +65,4 @@ export function BlockInspector({ block, intent }: { block: DeviceBlock; intent?:
       </div>
     </div>
   );
-}
+});

@@ -35,6 +35,16 @@ export const User = (p: IconProps) => (
     <path d="M4 16.5c.9-2.6 3.2-4 6-4s5.1 1.4 6 4" />
   </Icon>
 );
+export const Play = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M6.5 4.5v11l9-5.5z" fill="currentColor" />
+  </Icon>
+);
+export const Stop = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="5.5" y="5.5" width="9" height="9" rx="1" fill="currentColor" />
+  </Icon>
+);
 export const ArrowLeft = (p: IconProps) => (
   <Icon {...p}>
     <path d="M16 10H4M9 5l-5 5 5 5" />

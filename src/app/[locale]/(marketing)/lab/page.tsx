@@ -3,6 +3,7 @@ import type { Locale } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { use } from "react";
+import { PageTransition } from "@/motion/view-transitions";
 import { LabView } from "@/features/lab/lab-view";
 
 export const metadata: Metadata = { title: "Lab", robots: { index: false } };
@@ -14,5 +15,9 @@ export default function LabPage({ params }: PageProps<"/[locale]/lab">) {
   const { locale } = use(params);
   setRequestLocale(locale as Locale);
   if (!enabled) notFound();
-  return <LabView />;
+  return (
+    <PageTransition>
+      <LabView />
+    </PageTransition>
+  );
 }

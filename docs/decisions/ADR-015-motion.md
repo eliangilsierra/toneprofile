@@ -1,6 +1,6 @@
 # ADR-015 — Motion stack
 
-- Status: accepted
+- Status: accepted — extended by [ADR-017](ADR-017-motion-system.md) (View Transitions adopted, tokens and visualisations expanded)
 - Date: 2026-09-29
 
 ## Options evaluated

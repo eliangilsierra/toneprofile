@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { Generation } from "@/lib/api/types";
 import { formatClock } from "@/lib/format/time";
+import { sharedName, SharedElement } from "@/motion/view-transitions";
 import { StatusChip } from "@/ui/status-chip";
 import type { RailStation } from "./signal-rail";
 import { useStepDetail } from "./use-step-detail";
@@ -41,10 +42,12 @@ export function GenerationHeading({ generation, eyebrow }: { generation: Generat
         <p className="label">
           {eyebrow ?? t("title")} · {tp(`deviceNames.${generation.input.device_key}` as "deviceNames.valeton_gp180")}
         </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-5xl">
-          {song ? song.title : t("fromExcerpt")}
-          {song && <span className="block text-xl font-normal text-ink-muted md:text-2xl">{song.artist}</span>}
-        </h1>
+        <SharedElement name={sharedName("title", generation.id)}>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-5xl">
+            {song ? song.title : t("fromExcerpt")}
+            {song && <span className="block text-xl font-normal text-ink-muted md:text-2xl">{song.artist}</span>}
+          </h1>
+        </SharedElement>
         {window && (
           <p className="mt-2 font-mono text-sm text-ink-muted tabular">
             {formatClock(window.start_s)} → {formatClock(window.end_s)}

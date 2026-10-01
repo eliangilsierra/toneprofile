@@ -1,33 +1,23 @@
 "use client";
 
+import { useReducedMotion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from "react";
-import { formatClock } from "@/lib/format/time";
 import { MAX_WINDOW_S, MIN_WINDOW_S } from "@/lib/audio/file";
+import { formatClock } from "@/lib/format/time";
+import { SharedElement } from "@/motion/view-transitions";
+import { cn } from "@/ui/cn";
+import { Play, Stop } from "@/ui/icons";
+import { drawLiveSpectrum, useExcerptPlayer } from "@/visualization/excerpt-player";
+import { useWaveformCanvas } from "@/visualization/waveform";
 
 export interface AnalysisWindow {
   start: number;
   end: number;
 }
 
-function drawWaveform(canvas: HTMLCanvasElement, peaks: number[]) {
-  const ratio = window.devicePixelRatio || 1;
-  const { width, height } = canvas.getBoundingClientRect();
-  canvas.width = Math.max(1, Math.round(width * ratio));
-  canvas.height = Math.max(1, Math.round(height * ratio));
-  const context = canvas.getContext("2d");
-  if (!context) return;
-  context.scale(ratio, ratio);
-  context.clearRect(0, 0, width, height);
-  const styles = getComputedStyle(canvas);
-  context.fillStyle = styles.getPropertyValue("--wave-color").trim() || "#75736e";
-  const bar = width / peaks.length;
-  const mid = height / 2;
-  peaks.forEach((peak, index) => {
-    const h = Math.max(1, peak * (height - 4));
-    context.fillRect(index * bar, mid - h / 2, Math.max(1, bar - 0.6), h);
-  });
-}
+/** Shared name: the selected window morphs into the excerpt strip of the analysis page. */
+export const EXCERPT_TRANSITION = "excerpt-window";
 
 /**
  * Waveform with a draggable analysis window (≤ 90 s). The two range inputs are the accessible
@@ -38,11 +28,14 @@ export function WaveformWindow({
   duration,
   value,
   onChange,
+  file = null,
 }: {
   peaks: number[];
   duration: number;
   value: AnalysisWindow;
   onChange: (next: AnalysisWindow) => void;
+  /** The user's file, to listen to the selection (Web Audio). */
+  file?: File | null;
 }) {
   const t = useTranslations("Create.reference");
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -52,14 +45,34 @@ export function WaveformWindow({
   const maxLength = Math.min(MAX_WINDOW_S, duration);
   const minLength = Math.min(MIN_WINDOW_S, duration);
 
+  // Real peaks appear left → right when the file is decoded.
+  useWaveformCanvas(canvasRef, peaks, { drawIn: true });
+
+  // Listening to the selection: playhead on the waveform + live spectrum of what's playing.
+  const player = useExcerptPlayer(file);
+  const reduce = useReducedMotion();
+  const playheadRef = useRef<HTMLSpanElement>(null);
+  const spectrumRef = useRef<HTMLCanvasElement>(null);
+  const { playing, stop, position, analyser } = player;
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    drawWaveform(canvas, peaks);
-    const observer = new ResizeObserver(() => drawWaveform(canvas, peaks));
-    observer.observe(canvas);
-    return () => observer.disconnect();
-  }, [peaks]);
+    if (!playing) return;
+    let frame = 0;
+    const node = analyser();
+    const data = new Uint8Array(node ? node.frequencyBinCount : 0);
+    const levels = new Float32Array(32);
+    const tick = () => {
+      const time = position();
+      if (time !== null && playheadRef.current) {
+        playheadRef.current.style.transform = `translateX(${(time / duration) * (trackRef.current?.clientWidth ?? 0)}px)`;
+      }
+      if (node && spectrumRef.current && !reduce) drawLiveSpectrum(spectrumRef.current, node, data, levels);
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [playing, position, analyser, duration, reduce]);
+  // Moving the window while listening stops playback (the old selection is no longer the one chosen).
+  useEffect(() => stop, [value.start, value.end, stop]);
 
   const setStart = (start: number) => {
     const clamped = Math.min(Math.max(0, start), Math.max(0, duration - length));
@@ -99,18 +112,39 @@ export function WaveformWindow({
       >
         <canvas ref={canvasRef} className="absolute inset-0 size-full [--wave-color:var(--color-ink-faint)]" />
         <div
-          className="absolute inset-y-0 border-x-2 border-signal bg-signal-soft"
+          className="absolute inset-y-0"
           style={{ left: `${(value.start / duration) * 100}%`, width: `${(length / duration) * 100}%` }}
-        />
+        >
+          <SharedElement name={EXCERPT_TRANSITION}>
+            <div className="size-full border-x-2 border-signal bg-signal-soft" />
+          </SharedElement>
+        </div>
+        {playing && <span ref={playheadRef} className="absolute inset-y-0 left-0 w-px bg-ink will-change-transform" />}
       </div>
 
-      <p className="font-mono text-sm text-ink tabular">
-        {t("windowSummary", {
-          start: formatClock(value.start),
-          end: formatClock(value.end),
-          length: formatClock(length),
-        })}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="font-mono text-sm text-ink tabular">
+          {t("windowSummary", {
+            start: formatClock(value.start),
+            end: formatClock(value.end),
+            length: formatClock(length),
+          })}
+        </p>
+        {file && (
+          <button
+            type="button"
+            onClick={() => (playing ? stop() : void player.play(value.start, value.end))}
+            className="pressable inline-flex items-center gap-2 rounded-sm border border-line-strong px-3 py-1.5 text-sm text-ink hover:border-ink-faint hover:bg-surface-2"
+          >
+            {playing ? <Stop className="text-signal" /> : <Play />}
+            {playing ? t("stopListening") : t("listen")}
+          </button>
+        )}
+      </div>
+      {/* Live spectrum of the playing selection (decorative; it only reflects playback). */}
+      <div aria-hidden className={cn("overflow-hidden transition-[height,opacity] duration-[var(--duration-base)]", playing && !reduce ? "h-14 opacity-100" : "h-0 opacity-0")}>
+        <canvas ref={spectrumRef} className="block h-14 w-full [--bar-color:var(--color-signal)]" />
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-2">

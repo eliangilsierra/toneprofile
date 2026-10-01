@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl";
 import { Suspense } from "react";
 import { Link } from "@/i18n/navigation";
+import { NAV_FORWARD } from "@/motion/view-transitions";
 import { ButtonLink } from "@/ui/button";
 import { Logo } from "@/ui/logo";
 import { LocaleSwitcher } from "./locale-switcher";
@@ -17,7 +18,7 @@ export function MarketingHeader() {
   ] as const;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line/60 bg-canvas/85 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-line/60 bg-canvas/85 backdrop-blur-md" style={{ viewTransitionName: "site-header" }}>
       <div className="mx-auto flex h-16 max-w-[88rem] items-center justify-between gap-3 px-4 sm:gap-6 sm:px-5 md:px-8">
         <Link href="/" aria-label={t("home")} className="rounded-xs">
           <Logo compact />
@@ -34,7 +35,7 @@ export function MarketingHeader() {
             <LocaleSwitcher />
           </Suspense>
           <SignInLink />
-          <ButtonLink href="/tones/new" size="sm">
+          <ButtonLink href="/tones/new" transitionTypes={NAV_FORWARD} size="sm">
             {t("startTone")}
           </ButtonLink>
         </div>

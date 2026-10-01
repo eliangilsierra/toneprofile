@@ -16,6 +16,8 @@ export default defineConfig({
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
     // Mobile runs the fast smoke subset.
     { name: "mobile", use: { ...devices["Pixel 7"] }, grep: /@smoke/ },
+    // Same smoke subset with the OS asking for reduced motion: everything must still work and read.
+    { name: "reduced-motion", use: { ...devices["Desktop Chrome"], contextOptions: { reducedMotion: "reduce" } }, grep: /@smoke|@motion/ },
   ],
   webServer: {
     command: `npm run start -- -p ${port}`,

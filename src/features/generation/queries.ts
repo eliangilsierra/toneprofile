@@ -22,6 +22,20 @@ export function useGeneration(id: string, { enabled = true }: { enabled?: boolea
   });
 }
 
+/**
+ * Warms the cache for a generation the user is about to open (hover/focus), so the destination
+ * renders in the same commit as the navigation and shared elements can morph into it.
+ */
+export function usePrefetchGeneration() {
+  const client = useQueryClient();
+  return (id: string) =>
+    client.prefetchQuery({
+      queryKey: queryKeys.generation(id),
+      queryFn: () => unwrap(api.GET("/v1/generations/{generationId}", { params: { path: { generationId: id } } })),
+      staleTime: 10_000,
+    });
+}
+
 export function useCancelGeneration(id: string) {
   const client = useQueryClient();
   return useMutation({

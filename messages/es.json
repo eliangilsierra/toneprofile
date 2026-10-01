@@ -192,7 +192,10 @@
       "secondaryCta": "Ver cómo funciona",
       "deviceNote": "Primer dispositivo: Valeton GP-180",
       "illustration": "Ilustración del proceso de análisis con una canción ficticia.",
-      "replay": "Repetir la ilustración"
+      "replay": "Repetir la ilustración",
+      "outcomeTitle": "Perfil de tono listo · preset para GP-180 creado",
+      "outcomeBody": "Limpio y brillante, con delay de corchea con puntillo y ambiente amplio: seis módulos, cada valor explicado.",
+      "outcomeSignature": "Firma del tono ilustrado: limpio, brillante, con mucho ambiente."
     },
     "how": {
       "eyebrow": "Cómo funciona",
@@ -312,7 +315,9 @@
       "windowHelp": "Elige un pasaje donde la guitarra se escuche con claridad. Los solos y las intros funcionan mejor.",
       "rights": "Soy dueño de esta grabación o tengo derecho a usarla para analizarla.",
       "fileName": "{name} · {duration}",
-      "rightsPolicy": "Cómo tratamos tu audio"
+      "rightsPolicy": "Cómo tratamos tu audio",
+      "listen": "Escuchar la selección",
+      "stopListening": "Detener"
     },
     "guitar": {
       "title": "Tu guitarra",
@@ -438,6 +443,13 @@
     "cancelled": {
       "title": "Análisis cancelado",
       "body": "No se guardó nada de este tono."
+    },
+    "excerpt": {
+      "label": "Tu fragmento",
+      "waiting": "A la espera de medirse",
+      "measuring": "Midiendo la guitarra en este pasaje…",
+      "measured": "Medido",
+      "failed": "No se pudo medir"
     }
   },
   "Problems": {
@@ -616,6 +628,19 @@
       "quote": "Cita",
       "openSource": "Abrir fuente",
       "howLink": "Cómo funcionan los niveles de evidencia"
+    },
+    "signature": {
+      "title": "Firma del tono",
+      "lede": "El espectro medido convertido en un círculo, rodeado por el carácter del tono. Dos tonos que suenan distinto se ven distinto.",
+      "ledeNoAudio": "El carácter del tono alrededor del círculo. No se midió ningún fragmento, así que no hay espectro en el centro.",
+      "aria": "Firma del tono: {summary}. Los mismos valores aparecen en Carácter del tono.",
+      "hint": "Elige una característica para verla en la firma, en la huella y en la cadena de señal.",
+      "legendLabel": "De dónde sale cada valor",
+      "legend": {
+        "measured": "Medido",
+        "research": "Investigación",
+        "inferred": "Inferido"
+      }
     }
   },
   "Preset": {

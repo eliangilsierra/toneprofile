@@ -4,6 +4,7 @@ import { setRequestLocale } from "next-intl/server";
 import { use } from "react";
 import { getDoc } from "@/content";
 import { alternatesFor } from "@/i18n/metadata";
+import { PageTransition } from "@/motion/view-transitions";
 import { LongformPage } from "@/ui/longform";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/methodology">): Promise<Metadata> {
@@ -15,5 +16,9 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/methodol
 export default function MethodologyPage({ params }: PageProps<"/[locale]/methodology">) {
   const { locale } = use(params);
   setRequestLocale(locale as Locale);
-  return <LongformPage doc={getDoc("methodology", locale)} />;
+  return (
+    <PageTransition>
+      <LongformPage doc={getDoc("methodology", locale)} />
+    </PageTransition>
+  );
 }

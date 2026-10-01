@@ -39,8 +39,22 @@ export async function attachExcerpt(page: Page, name: string, seconds = 40) {
   await page.locator('input[type="file"]').setInputFiles({ name, mimeType: "audio/wav", buffer: makeWav(seconds) });
 }
 
-/** WCAG 2.1 A/AA audit with axe-core; fails on any violation. */
+/**
+ * WCAG 2.1 A/AA audit with axe-core; fails on any violation. Waits for finite animations (fades,
+ * reveals) to settle first so contrast is measured on what the user actually reads.
+ */
 export async function expectAccessible(page: Page) {
+  await page.waitForFunction(
+    () =>
+      document
+        .getAnimations()
+        // Scroll-driven animations (other timelines) and infinite loops never "finish": skip them.
+        .filter((animation) => animation.timeline === document.timeline && animation.effect?.getTiming().iterations !== Infinity)
+        .every((animation) => animation.playState !== "running"),
+    undefined,
+    { timeout: 5_000 },
+  );
+  await page.waitForTimeout(250);
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
   const summary = results.violations.map((violation) => `${violation.id}: ${violation.nodes.length} node(s) — ${violation.help}`);
   expect(summary).toEqual([]);

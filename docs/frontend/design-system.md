@@ -47,23 +47,22 @@ labels (GAIN, UK 800) are never translated.
 
 ## Motion
 
+The full motion language ("Calibrated Signal": principles, tokens, hierarchy, signature moments,
+reduced-motion behaviour, performance) lives in [motion system](motion-system.md). Summary of the
+tokens (`src/motion/tokens.ts` ↔ CSS variables):
+
 | Token | Value | Used for |
 |---|---|---|
-| `instant` | 80 ms | Press feedback |
-| `fast` | 140 ms | Hover, colour, content swaps inside cards |
-| `base` | 220 ms | Findings appearing, small layout changes |
-| `slow` | 360 ms | Section reveals |
-| `signal` | 900 ms | Signal travelling along the rail |
-| `ease.standard` | `cubic-bezier(.2,0,0,1)` | Default |
-| `ease.out` | `cubic-bezier(.05,.7,.1,1)` | Entrances |
-| `ease.in` | `cubic-bezier(.3,0,.8,.15)` | Exits |
-| `spring.snappy` | 520 / 42 | Toggles |
-| `spring.soft` | 210 / 30 | Translation morphs |
+| `instant` · `micro` · `fast` | 80 · 120 · 160 ms | State flips · hover/press · small swaps |
+| `base` · `slow` · `deliberate` | 220 · 360 · 560 ms | Component changes · section reveals and route slides · drawing data |
+| `signal` · `ambient` | 900 · 2400 ms | One signal hop · loop period (only while work is reported) |
+| `ease.standard` · `out` · `in` · `linear` · `settle` | see tokens | Default · arrivals · departures · signal travel · instruments settling |
+| `spring.snappy` · `soft` · `needle` | 520/42 · 210/30 · 260/24 | Toggles · layout morphs · knobs and needles |
+| `staggers.micro` · `list` · `signalHop` | 30 · 45 · 120 ms | LED segments · lists · blocks along the chain |
 
-Principles: motion explains causality (signal flows left→right; blocks keep identity when they
-translate). Only live signal loops. `prefers-reduced-motion`: Motion drops transforms/layout (keeps
-opacity), CSS animations are neutralised, the hero illustration shows its final state, the result
-opens directly on the device view.
+Principles in one line each: motion follows the signal (left → right); amber moves only where
+signal or focus is; measured things settle, never bounce; loops only while the backend reports
+work; celebrate only what the user watched; one signature moment at a time.
 
 ## Components
 

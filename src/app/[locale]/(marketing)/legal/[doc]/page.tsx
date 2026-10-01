@@ -6,6 +6,7 @@ import { use } from "react";
 import { getDoc, isLegalDoc, LEGAL_DOCS } from "@/content";
 import { alternatesFor } from "@/i18n/metadata";
 import { routing } from "@/i18n/routing";
+import { PageTransition } from "@/motion/view-transitions";
 import { LongformPage } from "@/ui/longform";
 
 // Known documents are prerendered; anything else hits notFound() below.
@@ -24,5 +25,9 @@ export default function LegalPage({ params }: PageProps<"/[locale]/legal/[doc]">
   const { locale, doc } = use(params);
   if (!isLegalDoc(doc)) notFound();
   setRequestLocale(locale as Locale);
-  return <LongformPage doc={getDoc(doc, locale)} />;
+  return (
+    <PageTransition>
+      <LongformPage doc={getDoc(doc, locale)} />
+    </PageTransition>
+  );
 }

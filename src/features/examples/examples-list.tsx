@@ -1,14 +1,18 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useQueryClient } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { toApiError } from "@/lib/api/errors";
 import type { ExampleSummary } from "@/lib/api/types";
+import { queryKeys } from "@/lib/api/keys";
+import { NAV_FORWARD, SharedElement, sharedName } from "@/motion/view-transitions";
 import { Button } from "@/ui/button";
 import { ArrowRight } from "@/ui/icons";
 import { Meter } from "@/ui/meter";
 import { Skeleton } from "@/ui/skeleton";
 import { ProblemState } from "@/features/shell/problem-state";
+import { usePrefetchGeneration } from "@/features/generation/queries";
 import { useExamples } from "./queries";
 
 function Badge({ children, tone = "muted" }: { children: React.ReactNode; tone?: "muted" | "measure" | "warn" }) {
@@ -22,13 +26,25 @@ function ExampleCard({ example }: { example: ExampleSummary }) {
   const tax = useTranslations("Taxonomy");
   const tprof = useTranslations("Profile");
   const tc = useTranslations("Common");
+  const client = useQueryClient();
+  const locale = useLocale();
+  const prefetch = usePrefetchGeneration();
+  const warm = () => {
+    client.setQueryData(queryKeys.example(example.slug, locale), example);
+    void prefetch(example.generation_id);
+  };
   return (
     <Link
+      onPointerEnter={warm}
+      onFocus={warm}
       href={`/examples/${example.slug}`}
-      className="group flex h-full flex-col gap-5 rounded-md border border-line bg-surface-1/50 p-5 transition-colors hover:border-line-strong hover:bg-surface-2 md:p-6"
+      transitionTypes={NAV_FORWARD}
+      className="edge-light lift group flex h-full flex-col gap-5 rounded-md border border-line bg-surface-1/50 p-5 transition-colors hover:border-line-strong hover:bg-surface-2 md:p-6"
     >
       <div>
-        <h2 className="text-xl font-semibold tracking-tight text-ink">{example.song.title}</h2>
+        <SharedElement name={sharedName("title", example.generation_id)}>
+          <h2 className="text-xl font-semibold tracking-tight text-ink">{example.song.title}</h2>
+        </SharedElement>
         <p className="text-ink-muted">{example.song.artist}</p>
       </div>
       <p className="flex-1 leading-relaxed text-ink-muted">{example.headline}</p>

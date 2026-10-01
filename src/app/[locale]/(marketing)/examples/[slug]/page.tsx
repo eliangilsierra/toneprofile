@@ -3,6 +3,7 @@ import type { Locale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { use } from "react";
 import { alternatesFor } from "@/i18n/metadata";
+import { PageTransition } from "@/motion/view-transitions";
 import { ExampleView } from "@/features/examples/example-view";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/examples/[slug]">): Promise<Metadata> {
@@ -14,5 +15,9 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/examples
 export default function ExamplePage({ params }: PageProps<"/[locale]/examples/[slug]">) {
   const { locale, slug } = use(params);
   setRequestLocale(locale as Locale);
-  return <ExampleView slug={slug} />;
+  return (
+    <PageTransition>
+      <ExampleView slug={slug} />
+    </PageTransition>
+  );
 }

@@ -1,17 +1,22 @@
 "use client";
 
+import * as m from "motion/react-m";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { toApiError } from "@/lib/api/errors";
 import { isTerminal, type Generation } from "@/lib/api/types";
 import { formatClock, formatDurationShort } from "@/lib/format/time";
+import { useWitnessed } from "@/motion/hooks";
+import { duration, ease } from "@/motion/tokens";
+import { NAV_BACK } from "@/motion/view-transitions";
 import { Button, ButtonLink } from "@/ui/button";
 import { ArrowLeft, Retry } from "@/ui/icons";
-import { PageSkeleton } from "@/ui/skeleton";
+import { PageSkeleton, RailSkeleton } from "@/ui/skeleton";
 import { ProblemState } from "@/features/shell/problem-state";
-import { useCancelGeneration, useGeneration, useRetryGeneration } from "./queries";
+import { ExcerptStrip } from "./excerpt-strip";
 import { GenerationHeading, useStations } from "./generation-heading";
+import { useCancelGeneration, useGeneration, useRetryGeneration } from "./queries";
 import { SignalRail } from "./signal-rail";
 import { useNow } from "./use-now";
 
@@ -83,9 +88,11 @@ export function GenerationView({ id }: { id: string }) {
   const terminal = generation ? isTerminal(generation.status) : false;
   const now = useNow(Boolean(generation) && !terminal);
   const announcement = useLiveAnnouncement(generation);
+  // Celebrate only a completion the user watched live — not an old result being reopened.
+  const arrived = useWitnessed(generation?.status === "ready", Boolean(generation));
   const stations = useStations(generation ?? ({ steps: [] } as unknown as Generation));
 
-  if (query.isPending) return <PageSkeleton label={tc("loading")} />;
+  if (query.isPending) return <RailSkeleton label={tc("loading")} />;
   if (query.error || !generation) {
     const error = toApiError(query.error);
     return (
@@ -118,14 +125,24 @@ export function GenerationView({ id }: { id: string }) {
       </p>
 
       <header className="flex flex-col gap-4">
-        <ButtonLink href="/tones" variant="ghost" size="sm" className="no-print -ml-3 w-fit">
+        <ButtonLink href="/tones" transitionTypes={NAV_BACK} variant="ghost" size="sm" className="no-print -ml-3 w-fit">
           <ArrowLeft />
           {t("backToLibrary")}
         </ButtonLink>
         <GenerationHeading generation={generation} />
+        <ExcerptStrip generation={generation} />
       </header>
 
-      <section aria-label={t("railLabel")} className="rounded-md border border-line bg-surface-1/50 p-5 md:p-7">
+      <section aria-label={t("railLabel")} className="relative overflow-hidden rounded-md border border-line bg-surface-1/50 p-5 md:p-7">
+        {arrived && (
+          <m.span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-linear-to-r from-transparent via-signal/12 to-transparent"
+            initial={{ x: "-100%" }}
+            animate={{ x: "100%" }}
+            transition={{ duration: duration.signal * 1.4, ease: ease.standard }}
+          />
+        )}
         <SignalRail stations={stations} label={t("railLabel")} />
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-4">
           <p className="font-mono text-xs text-ink-muted tabular">
@@ -153,21 +170,29 @@ export function GenerationView({ id }: { id: string }) {
         )}
       </section>
 
+      {/* Problems arrive from the rail above: where the signal stopped → why → how to recover. */}
       {generation.status === "failed" && generation.error && (
-        <ProblemState
-          code={generation.error.code}
-          actions={<FailureActions generation={generation} onRetry={() => retry.mutate()} retrying={retry.isPending} />}
-        />
+        <m.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: duration.slow, ease: ease.out }}>
+          <ProblemState
+            code={generation.error.code}
+            actions={<FailureActions generation={generation} onRetry={() => retry.mutate()} retrying={retry.isPending} />}
+          />
+        </m.div>
       )}
 
       {generation.status === "cancelled" && (
-        <div className="rounded-md border border-line-strong bg-surface-1 p-6">
+        <m.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: duration.slow, ease: ease.out }}
+          className="rounded-md border border-line-strong bg-surface-1 p-6"
+        >
           <h2 className="text-lg font-medium">{t("cancelled.title")}</h2>
           <p className="mt-1 text-ink-muted">{t("cancelled.body")}</p>
           <ButtonLink href="/tones/new" variant="secondary" className="mt-5">
             {t("startOver")}
           </ButtonLink>
-        </div>
+        </m.div>
       )}
 
       {generation.status === "ready" && generation.result && (

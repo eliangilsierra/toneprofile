@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { use } from "react";
 import { useTranslations } from "next-intl";
 import { alternatesFor } from "@/i18n/metadata";
+import { PageTransition } from "@/motion/view-transitions";
 import { CreateToneForm } from "@/features/create-tone/create-tone-form";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/tones/new">): Promise<Metadata> {
@@ -17,12 +18,14 @@ export default function NewTonePage({ params }: PageProps<"/[locale]/tones/new">
   setRequestLocale(locale as Locale);
   const t = useTranslations("Create");
   return (
-    <div>
-      <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">{t("title")}</h1>
-      <p className="mt-2 max-w-2xl text-ink-muted">{t("lede")}</p>
-      <div className="mt-10">
-        <CreateToneForm />
+    <PageTransition>
+      <div>
+        <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">{t("title")}</h1>
+        <p className="mt-2 max-w-2xl text-ink-muted">{t("lede")}</p>
+        <div className="mt-10">
+          <CreateToneForm />
+        </div>
       </div>
-    </div>
+    </PageTransition>
   );
 }

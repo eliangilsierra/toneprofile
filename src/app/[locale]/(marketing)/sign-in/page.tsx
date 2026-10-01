@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { use } from "react";
 import { Link } from "@/i18n/navigation";
+import { PageTransition } from "@/motion/view-transitions";
 import { ButtonLink } from "@/ui/button";
 import { ArrowRight } from "@/ui/icons";
 
@@ -19,20 +20,22 @@ export default function SignInPage({ params }: PageProps<"/[locale]/sign-in">) {
   setRequestLocale(locale as Locale);
   const t = useTranslations("SignIn");
   return (
-    <main id="content" className="bg-grid grid place-items-center px-5 py-20 md:py-28">
-      <div className="max-w-md rounded-md border border-line bg-surface-1 p-8">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="mt-3 text-ink-muted">{t("body")}</p>
-        <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
-          <ButtonLink href="/tones/new">
-            {t("continue")}
-            <ArrowRight />
-          </ButtonLink>
-          <Link href="/legal/privacy" className="text-sm text-ink-muted underline decoration-line-strong underline-offset-4 hover:text-ink">
-            {t("privacy")}
-          </Link>
+    <PageTransition>
+      <main id="content" className="bg-grid grid place-items-center px-5 py-20 md:py-28">
+        <div className="max-w-md rounded-md border border-line bg-surface-1 p-8">
+          <h1 className="text-2xl font-semibold">{t("title")}</h1>
+          <p className="mt-3 text-ink-muted">{t("body")}</p>
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <ButtonLink href="/tones/new">
+              {t("continue")}
+              <ArrowRight />
+            </ButtonLink>
+            <Link href="/legal/privacy" className="text-sm text-ink-muted underline decoration-line-strong underline-offset-4 hover:text-ink">
+              {t("privacy")}
+            </Link>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </PageTransition>
   );
 }

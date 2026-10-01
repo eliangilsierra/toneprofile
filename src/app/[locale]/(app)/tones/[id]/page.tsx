@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { use } from "react";
+import { PageTransition } from "@/motion/view-transitions";
 import { GenerationView } from "@/features/generation/generation-view";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/tones/[id]">): Promise<Metadata> {
@@ -11,5 +12,9 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/tones/[i
 
 export default function GenerationPage({ params }: PageProps<"/[locale]/tones/[id]">) {
   const { id } = use(params);
-  return <GenerationView id={id} />;
+  return (
+    <PageTransition>
+      <GenerationView id={id} />
+    </PageTransition>
+  );
 }
