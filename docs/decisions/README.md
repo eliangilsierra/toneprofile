@@ -16,7 +16,8 @@
 | [012](ADR-012-nextjs-frontend.md) | Next.js for the web application | accepted |
 | [013](ADR-013-i18n.md) | English + Spanish from the MVP (next-intl) | accepted |
 | [014](ADR-014-styling.md) | Tailwind v4 tokens + own components | accepted |
-| [015](ADR-015-motion.md) | Motion stack | accepted |
+| [015](ADR-015-motion.md) | Motion stack | accepted (extended by 017) |
 | [016](ADR-016-mock-backend.md) | Contract-faithful mock backend (MSW) | accepted |
+| [017](ADR-017-motion-system.md) | Motion system v2 ("Calibrated Signal") | accepted |
 
 New ADRs: copy [ADR-000-template.md](ADR-000-template.md).

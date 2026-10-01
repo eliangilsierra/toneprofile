@@ -32,7 +32,7 @@ Start with the **[technical proposal](proposal.md)** and the **[MVP master plan]
 |---|---|
 | Product | [Product definition](product/product-definition.md) · [MVP master plan](product/mvp-master-plan.md) · [UX architecture](product/ux-architecture.md) · [Legal considerations](product/legal-considerations.md) |
 | Research | [GP-180 ecosystem](research/gp180-ecosystem.md) · [Competitive analysis](research/competitive-analysis.md) · [UX research](research/ux-research.md) · [Feasibility](research/feasibility.md) |
-| Frontend | [Creative direction](frontend/creative-direction.md) · [Design system](frontend/design-system.md) · [Frontend architecture](frontend/frontend-architecture.md) · [Performance](frontend/performance.md) |
+| Frontend | [Creative direction](frontend/creative-direction.md) · [Design system](frontend/design-system.md) · [Frontend architecture](frontend/frontend-architecture.md) · [Motion system](frontend/motion-system.md) · [Performance](frontend/performance.md) |
 | API | [Contract v1](api/README.md) ([OpenAPI](api/openapi-v1.yaml)) |
 | Device | [GP-180 preset format](devices/valeton-gp180/preset-format.md) · [Device engine](devices/valeton-gp180/device-engine.md) |
 | Architecture | [Overview](architecture/overview.md) · [Tone representation](architecture/tone-representation.md) · [Domain model](architecture/domain-model.md) · [Security](architecture/security.md) · [Cost model](architecture/cost-model.md) · [Observability](architecture/observability.md) · [Repositories & CI/CD](architecture/repository.md) |

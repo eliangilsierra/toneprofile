@@ -47,7 +47,9 @@ src/
 ├── content/                           long-form pages as typed modules per locale (methodology,
 │                                      legal); en/es structure parity enforced by a test
 ├── ui/                                design-system primitives
-├── motion/                            tokens, provider, primitives
+├── motion/                            tokens, presets, hooks, provider, view transitions, pointer light
+├── visualization/                     Tone Signature (+ pure geometry), waveform, knob, excerpt player
+│                                      (Web Audio) — see motion-system.md
 ├── lib/api/                           client, generated schema, types, errors, query keys, backend-ready
 ├── lib/audio/                         file checks, preview decoding
 ├── lib/format/                        time, frequency, device parameter formatting

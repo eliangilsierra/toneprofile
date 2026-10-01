@@ -146,6 +146,7 @@ Details: [MVP master plan](product/mvp-master-plan.md), [frontend architecture](
 | W9 | Preset (translation, inspector, explanation, checks, download/demo reason, dial-in sheet, import guide, feedback) | ✅ done |
 | W10 | Quality: responsive, reduced motion, axe, bundle + vitals measurement | ✅ done ([performance](frontend/performance.md)) |
 | W10b | Examples (`/v1/examples`), Methodology + FAQ, Legal drafts (privacy, terms, audio), site footer | ✅ done |
+| W10c | Motion system v2 ("Calibrated Signal"): tokens, route transitions, Tone Signature, live analysis, translation, knobs, excerpt preview ([motion system](frontend/motion-system.md)) | ✅ done |
 | W11 | P1 features: Match, fine-tune (intent sliders), saved guitars, light theme | next |
 | W12 | Integration with the real API (P6): http mode, auth, deploy | with P6 |
 

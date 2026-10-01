@@ -23,7 +23,7 @@ npm run dev                  # http://localhost:3000 → redirects to /en or /es
 | `npm run lint` · `npm run typecheck` · `npm test` | ESLint · TypeScript · Vitest |
 | `npm run e2e` | Playwright + axe (needs `npm run build` first; `npx playwright install chromium` once) |
 | `npm run api:types` | Regenerate `src/lib/api/schema.d.ts` from `docs/api/openapi-v1.yaml` |
-| `node scripts/measure-bundles.mjs <url>` · `node scripts/measure-vitals.mjs <url>` | Performance measurements against a running production server |
+| `node scripts/measure-bundles.mjs <url>` · `node scripts/measure-vitals.mjs <url>` · `node scripts/measure-motion.mjs <url>` | Performance measurements against a running production server (JS per route, lab vitals, animation smoothness) |
 
 ## Environment
 
