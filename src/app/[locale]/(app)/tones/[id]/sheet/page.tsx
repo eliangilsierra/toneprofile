@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { use } from "react";
+import { PageTransition } from "@/motion/view-transitions";
 import { DialInSheet } from "@/features/preset/dial-in-sheet";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/tones/[id]/sheet">): Promise<Metadata> {
@@ -11,5 +12,9 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/tones/[i
 
 export default function SheetPage({ params }: PageProps<"/[locale]/tones/[id]/sheet">) {
   const { id } = use(params);
-  return <DialInSheet generationId={id} backHref={`/tones/${id}`} />;
+  return (
+    <PageTransition>
+      <DialInSheet generationId={id} backHref={`/tones/${id}`} />
+    </PageTransition>
+  );
 }

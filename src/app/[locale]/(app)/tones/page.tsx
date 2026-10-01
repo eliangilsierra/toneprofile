@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { PageTransition } from "@/motion/view-transitions";
 import { LibraryView } from "@/features/library/library-view";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/tones">): Promise<Metadata> {
@@ -10,5 +11,9 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/tones">)
 }
 
 export default function TonesPage() {
-  return <LibraryView />;
+  return (
+    <PageTransition>
+      <LibraryView />
+    </PageTransition>
+  );
 }

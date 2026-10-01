@@ -4,6 +4,7 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { MotionProvider } from "@/motion/motion-provider";
+import { PointerLight } from "@/motion/pointer-light";
 import { instrumentSans, instrumentSerif, jetbrainsMono } from "../fonts";
 
 export function generateStaticParams() {
@@ -49,6 +50,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
         </a>
         <NextIntlClientProvider>
           <MotionProvider>{children}</MotionProvider>
+          <PointerLight />
         </NextIntlClientProvider>
       </body>
     </html>

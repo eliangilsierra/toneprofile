@@ -2,8 +2,9 @@
 
 import { useTranslations } from "next-intl";
 import { Suspense } from "react";
-import { apiMode } from "@/lib/api/client";
 import { Link, usePathname } from "@/i18n/navigation";
+import { apiMode } from "@/lib/api/client";
+import { NAV_FORWARD } from "@/motion/view-transitions";
 import { cn } from "@/ui/cn";
 import { Plus } from "@/ui/icons";
 import { Logo } from "@/ui/logo";
@@ -34,7 +35,7 @@ export function AppHeader() {
   ];
 
   return (
-    <header className="no-print sticky top-0 z-40 border-b border-line bg-canvas/90 backdrop-blur-md">
+    <header className="no-print sticky top-0 z-40 border-b border-line bg-canvas/90 backdrop-blur-md" style={{ viewTransitionName: "site-header" }}>
       <div className="mx-auto flex h-14 max-w-[88rem] items-center justify-between gap-2 px-4 sm:gap-4 sm:px-5 md:px-8">
         <div className="flex items-center gap-2 sm:gap-6">
           <Link href="/" aria-label={t("home")} className="rounded-xs">
@@ -64,6 +65,7 @@ export function AppHeader() {
           <SignInLink />
           <Link
             href="/tones/new"
+            transitionTypes={NAV_FORWARD}
             className="inline-flex h-8 items-center gap-1.5 rounded-sm bg-signal px-3 text-sm font-medium text-signal-ink transition-colors hover:bg-signal-strong"
           >
             <Plus />
