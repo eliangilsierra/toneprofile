@@ -1,10 +1,11 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { memo } from "react";
 import type { AudioEvidence } from "@/lib/api/types";
 
 /** What the analyzer measured in the excerpt, stated plainly. */
-export function AudioFacts({ audio }: { audio: AudioEvidence }) {
+export const AudioFacts = memo(function AudioFacts({ audio }: { audio: AudioEvidence }) {
   const t = useTranslations("Profile.audio");
   const tax = useTranslations("Taxonomy");
   const tc = useTranslations("Common");
@@ -47,4 +48,4 @@ export function AudioFacts({ audio }: { audio: AudioEvidence }) {
       </p>
     </div>
   );
-}
+});

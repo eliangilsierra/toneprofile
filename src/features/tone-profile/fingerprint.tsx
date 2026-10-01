@@ -2,20 +2,19 @@
 
 import { scaleLinear, scaleLog } from "d3-scale";
 import { area, curveMonotoneX, line } from "d3-shape";
+import { useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
 import { useFormatter, useTranslations } from "next-intl";
-import { useId, useMemo, useState } from "react";
+import { memo, type PointerEvent as ReactPointerEvent, useId, useMemo, useRef, useState } from "react";
 import type { Spectrum } from "@/lib/api/types";
 import { formatHz } from "@/lib/format/time";
+import { useSeenOnce } from "@/motion/hooks";
+import { drawTransition } from "@/motion/presets";
+import { duration, ease, spring } from "@/motion/tokens";
 import { cn } from "@/ui/cn";
+import { PERCEPTUAL_BANDS, type BandKey } from "@/visualization/tone-signature/geometry";
 
-export const PERCEPTUAL_BANDS = [
-  { key: "body", from: 70, to: 250 },
-  { key: "warmth", from: 250, to: 500 },
-  { key: "mids", from: 500, to: 1500 },
-  { key: "bite", from: 1500, to: 4000 },
-  { key: "air", from: 4000, to: 14000 },
-] as const;
-type BandKey = (typeof PERCEPTUAL_BANDS)[number]["key"];
+export { PERCEPTUAL_BANDS };
 
 const W = 800;
 const H = 260;
@@ -34,16 +33,23 @@ export function bandLevel(spectrum: Spectrum, from: number, to: number): number 
  * with perceptual bands a guitarist can reason about. The chart is decorative for screen readers;
  * the band buttons and the table carry the same information as text.
  */
-export function Fingerprint({ spectrum }: { spectrum: Spectrum }) {
+export const Fingerprint = memo(function Fingerprint({ spectrum, focusBand = null }: { spectrum: Spectrum; focusBand?: BandKey | null }) {
   const t = useTranslations("Profile.fingerprint");
   const format = useFormatter();
   const gradientId = useId();
+  const svgRef = useRef<SVGSVGElement>(null);
+  const seen = useSeenOnce(svgRef, 0.4);
+  const reduce = useReducedMotion();
+  const drawn = seen || Boolean(reduce);
+  const [hover, setHover] = useState<number | null>(null);
   const levels = useMemo(
     () => Object.fromEntries(PERCEPTUAL_BANDS.map((band) => [band.key, bandLevel(spectrum, band.from, band.to)])) as Record<BandKey, number>,
     [spectrum],
   );
   const loudest = PERCEPTUAL_BANDS.reduce((best, band) => (levels[band.key] > levels[best.key] ? band : best));
-  const [active, setActive] = useState<BandKey>(loudest.key);
+  const [chosen, setChosen] = useState<BandKey>(loudest.key);
+  // A character selected in the targets list takes over while it's highlighted.
+  const active = focusBand ?? chosen;
 
   const { x, y, linePath, areaPath, yTicks } = useMemo(() => {
     const min = Math.min(-12, Math.floor(Math.min(...spectrum.db) - 2));
@@ -67,21 +73,44 @@ export function Fingerprint({ spectrum }: { spectrum: Spectrum }) {
 
   const activeBand = PERCEPTUAL_BANDS.find((band) => band.key === active)!;
 
+  // Crosshair: nearest measured band under the pointer (decorative; the table has the values).
+  const onPointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const hz = x.invert(((event.clientX - rect.left) / rect.width) * W);
+    let nearest = 0;
+    spectrum.bands_hz.forEach((band, index) => {
+      const best = spectrum.bands_hz[nearest] ?? band;
+      if (Math.abs(Math.log(band / hz)) < Math.abs(Math.log(best / hz))) nearest = index;
+    });
+    setHover(nearest);
+  };
+  const hoverHz = hover !== null ? spectrum.bands_hz[hover] : undefined;
+  const hoverDb = hover !== null ? spectrum.db[hover] : undefined;
+
   return (
     <div>
       <div className="overflow-hidden rounded-sm border border-line bg-surface-1">
-        <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-label={t("chartLabel")}>
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${W} ${H}`}
+          className="block h-auto w-full"
+          role="img"
+          aria-label={t("chartLabel")}
+          onPointerMove={onPointerMove}
+          onPointerLeave={() => setHover(null)}
+        >
           <defs>
             <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%" stopColor="var(--color-signal)" stopOpacity="0.28" />
               <stop offset="100%" stopColor="var(--color-signal)" stopOpacity="0" />
             </linearGradient>
           </defs>
-          {/* Active band */}
-          <rect
-            x={x(activeBand.from)}
+          {/* Active band: slides to the new band instead of jumping. */}
+          <m.rect
+            initial={false}
+            animate={{ x: x(activeBand.from), width: x(activeBand.to) - x(activeBand.from) }}
+            transition={spring.soft}
             y={M.top}
-            width={x(activeBand.to) - x(activeBand.from)}
             height={H - M.top - M.bottom}
             fill="var(--color-signal)"
             opacity="0.07"
@@ -110,11 +139,49 @@ export function Fingerprint({ spectrum }: { spectrum: Spectrum }) {
           {PERCEPTUAL_BANDS.slice(1).map((band) => (
             <line key={band.key} x1={x(band.from)} x2={x(band.from)} y1={M.top} y2={H - M.bottom} stroke="var(--color-line-strong)" strokeDasharray="1 5" />
           ))}
-          <path d={areaPath} fill={`url(#${gradientId})`} />
-          <path d={linePath} fill="none" stroke="var(--color-signal)" strokeWidth="2" strokeLinejoin="round" />
+          {/* The measured curve draws itself low → high frequency the first time it's seen. */}
+          <m.path
+            d={areaPath}
+            fill={`url(#${gradientId})`}
+            initial={reduce ? false : { opacity: 0 }}
+            animate={drawn ? { opacity: 1 } : undefined}
+            transition={{ duration: duration.slow, ease: ease.standard, delay: duration.deliberate }}
+          />
+          <m.path
+            d={linePath}
+            fill="none"
+            stroke="var(--color-signal)"
+            strokeWidth="2"
+            strokeLinejoin="round"
+            initial={reduce ? false : { pathLength: 0 }}
+            animate={drawn ? { pathLength: 1 } : undefined}
+            transition={{ ...drawTransition, duration: duration.deliberate * 1.6 }}
+          />
           {spectrum.bands_hz.map((hz, index) => (
-            <circle key={hz} cx={x(hz)} cy={y(spectrum.db[index] ?? 0)} r="2" fill="var(--color-canvas)" stroke="var(--color-signal)" strokeWidth="1.2" />
+            <circle
+              key={hz}
+              cx={x(hz)}
+              cy={y(spectrum.db[index] ?? 0)}
+              r={hover === index ? 4 : 2}
+              fill={hover === index ? "var(--color-signal)" : "var(--color-canvas)"}
+              stroke="var(--color-signal)"
+              strokeWidth="1.2"
+              className={cn("transition-opacity duration-[var(--duration-slow)]", drawn ? "opacity-100" : "opacity-0")}
+            />
           ))}
+          {hoverHz !== undefined && hoverDb !== undefined && (
+            <g aria-hidden className="pointer-events-none">
+              <line x1={x(hoverHz)} x2={x(hoverHz)} y1={M.top} y2={H - M.bottom} stroke="var(--color-ink-faint)" strokeDasharray="2 3" />
+              <text
+                x={Math.min(W - M.right - 4, Math.max(M.left + 4, x(hoverHz)))}
+                y={M.top + 12}
+                textAnchor={x(hoverHz) > W * 0.8 ? "end" : x(hoverHz) < W * 0.2 ? "start" : "middle"}
+                className="fill-ink font-mono text-[12px]"
+              >
+                {`${formatHz(hoverHz)}Hz · ${hoverDb > 0 ? "+" : ""}${hoverDb.toFixed(1)} dB`}
+              </text>
+            </g>
+          )}
         </svg>
       </div>
 
@@ -126,14 +193,18 @@ export function Fingerprint({ spectrum }: { spectrum: Spectrum }) {
               key={band.key}
               type="button"
               aria-pressed={active === band.key}
-              onClick={() => setActive(band.key)}
+              onClick={() => setChosen(band.key)}
               className={cn(
-                "flex flex-col items-start gap-0.5 rounded-sm border px-3 py-2 text-left transition-colors",
-                active === band.key ? "border-signal bg-signal-soft" : "border-line hover:border-line-strong",
+                "pressable relative flex flex-col items-start gap-0.5 rounded-sm border px-3 py-2 text-left",
+                active === band.key ? "border-signal" : "border-line hover:border-line-strong",
               )}
             >
-              <span className="text-sm text-ink">{t(`bands.${band.key}`)}</span>
-              <span className="font-mono text-xs text-ink-muted tabular">
+              {/* The selected fill slides between bands (shared layout). */}
+              {active === band.key && (
+                <m.span layoutId={`${gradientId}-band`} transition={spring.snappy} aria-hidden className="absolute inset-0 rounded-sm bg-signal-soft" />
+              )}
+              <span className="relative text-sm text-ink">{t(`bands.${band.key}`)}</span>
+              <span className="relative font-mono text-xs text-ink-muted tabular">
                 {level > 0 ? "+" : ""}
                 {level.toFixed(1)} dB
               </span>
@@ -179,4 +250,4 @@ export function Fingerprint({ spectrum }: { spectrum: Spectrum }) {
       </details>
     </div>
   );
-}
+});

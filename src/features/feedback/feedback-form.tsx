@@ -1,12 +1,14 @@
 "use client";
 
+import * as m from "motion/react-m";
 import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import type { FeedbackCreate } from "@/lib/api/types";
+import { duration, ease } from "@/motion/tokens";
+import { ActionIcon, DrawnCheck } from "@/ui/action-icon";
 import { Button } from "@/ui/button";
 import { cn } from "@/ui/cn";
 import { controlClasses } from "@/ui/field";
-import { Check } from "@/ui/icons";
 import { useSendFeedback } from "@/features/generation/queries";
 
 type Tag = NonNullable<FeedbackCreate["tags"]>[number];
@@ -32,10 +34,16 @@ export function FeedbackForm({ presetId, version }: { presetId: string; version:
 
   if (send.isSuccess) {
     return (
-      <p role="status" className="flex items-center gap-2 rounded-sm border border-ok/40 bg-surface-1 p-4 text-ink">
-        <Check className="text-ok" />
+      <m.p
+        role="status"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: duration.slow, ease: ease.out }}
+        className="flex items-center gap-2 rounded-sm border border-ok/40 bg-surface-1 p-4 text-ink"
+      >
+        <DrawnCheck className="text-ok" />
         {t("thanks", { version })}
-      </p>
+      </m.p>
     );
   }
 
@@ -110,6 +118,7 @@ export function FeedbackForm({ presetId, version }: { presetId: string; version:
 
       <div className="flex flex-wrap items-center gap-4">
         <Button type="submit" disabled={!usefulness || send.isPending}>
+          {send.isPending && <ActionIcon state="busy" idle={null} />}
           {send.isPending ? t("sending") : t("submit")}
         </Button>
         {send.isError && (

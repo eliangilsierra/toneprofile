@@ -1,12 +1,13 @@
 "use client";
 
 import { useFormatter, useTranslations } from "next-intl";
+import { memo } from "react";
 import type { Claim } from "@/lib/api/types";
 import { EvidenceMark } from "@/ui/evidence-mark";
 import { External } from "@/ui/icons";
 
 /** Gear claims with their evidence level and verifiable sources. */
-export function EvidenceList({ claims, lang }: { claims: Claim[]; lang?: string }) {
+export const EvidenceList = memo(function EvidenceList({ claims, lang }: { claims: Claim[]; lang?: string }) {
   const t = useTranslations("Profile.evidence");
   const tx = useTranslations("Taxonomy.roles");
   const ts = useTranslations("Evidence.specificity");
@@ -66,4 +67,4 @@ export function EvidenceList({ claims, lang }: { claims: Claim[]; lang?: string 
       ))}
     </ul>
   );
-}
+});

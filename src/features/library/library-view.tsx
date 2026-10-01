@@ -3,11 +3,13 @@
 import { useFormatter, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { toApiError } from "@/lib/api/errors";
+import { NAV_FORWARD, SharedElement, sharedName } from "@/motion/view-transitions";
 import { Button, ButtonLink } from "@/ui/button";
 import { ArrowRight, Waveform } from "@/ui/icons";
 import { Skeleton } from "@/ui/skeleton";
 import { StatusChip } from "@/ui/status-chip";
 import { ProblemState } from "@/features/shell/problem-state";
+import { usePrefetchGeneration } from "@/features/generation/queries";
 import { useGenerations } from "./queries";
 
 export function LibraryView() {
@@ -16,6 +18,7 @@ export function LibraryView() {
   const tc = useTranslations("Common");
   const format = useFormatter();
   const { data, isPending, error, refetch } = useGenerations();
+  const prefetch = usePrefetchGeneration();
 
   return (
     <div>
@@ -59,13 +62,18 @@ export function LibraryView() {
               <li key={item.id}>
                 <Link
                   href={`/tones/${item.id}`}
-                  className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2 bg-surface-1/40 px-4 py-4 transition-colors hover:bg-surface-2 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto_auto] md:px-5"
+                  transitionTypes={NAV_FORWARD}
+                  onPointerEnter={() => void prefetch(item.id)}
+                  onFocus={() => void prefetch(item.id)}
+                  className="edge-light grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2 bg-surface-1/40 px-4 py-4 transition-colors hover:bg-surface-2 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto_auto] md:px-5"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-ink">
-                      {item.song ? item.song.title : t("noSong")}
-                      {item.song && <span className="text-ink-muted"> — {item.song.artist}</span>}
-                    </p>
+                    <SharedElement name={sharedName("title", item.id)}>
+                      <p className="truncate font-medium text-ink">
+                        {item.song ? item.song.title : t("noSong")}
+                        {item.song && <span className="text-ink-muted"> — {item.song.artist}</span>}
+                      </p>
+                    </SharedElement>
                     <p className="mt-0.5 flex flex-wrap gap-x-3 font-mono text-xs text-ink-faint">
                       {item.preset_name && <span>{item.preset_name}</span>}
                       {item.has_reference_audio && <span>{t("audioAttached")}</span>}

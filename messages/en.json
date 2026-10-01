@@ -192,7 +192,10 @@
       "secondaryCta": "See how it works",
       "deviceNote": "First device: Valeton GP-180",
       "illustration": "Illustration of the analysis pipeline with a fictional song.",
-      "replay": "Replay the illustration"
+      "replay": "Replay the illustration",
+      "outcomeTitle": "Tone profile ready · GP-180 preset built",
+      "outcomeBody": "Clean and bright, with a dotted-eighth delay and wide ambience — six modules, every value explained.",
+      "outcomeSignature": "Tone signature of the illustrated tone: clean, bright, strong ambience."
     },
     "how": {
       "eyebrow": "How it works",
@@ -312,7 +315,9 @@
       "windowHelp": "Pick a passage where the guitar is clearly audible. Solos and intros work best.",
       "rights": "I own this recording or have the right to use it for analysis.",
       "fileName": "{name} · {duration}",
-      "rightsPolicy": "How we handle your audio"
+      "rightsPolicy": "How we handle your audio",
+      "listen": "Listen to selection",
+      "stopListening": "Stop"
     },
     "guitar": {
       "title": "Your guitar",
@@ -438,6 +443,13 @@
     "cancelled": {
       "title": "Analysis cancelled",
       "body": "Nothing was saved for this tone."
+    },
+    "excerpt": {
+      "label": "Your excerpt",
+      "waiting": "Waiting to be measured",
+      "measuring": "Measuring the guitar in this passage…",
+      "measured": "Measured",
+      "failed": "Couldn't be measured"
     }
   },
   "Problems": {
@@ -616,6 +628,19 @@
       "quote": "Quote",
       "openSource": "Open source",
       "howLink": "How evidence levels work"
+    },
+    "signature": {
+      "title": "Tone signature",
+      "lede": "The measured spectrum wrapped into a circle, surrounded by the tone's character. Two tones that sound different look different.",
+      "ledeNoAudio": "The tone's character around the circle. No excerpt was measured, so there's no spectrum at the centre.",
+      "aria": "Tone signature: {summary}. The same values are listed under Tone character.",
+      "hint": "Select a characteristic to see it in the signature, the fingerprint and the signal chain.",
+      "legendLabel": "Where each value comes from",
+      "legend": {
+        "measured": "Measured",
+        "research": "Research",
+        "inferred": "Inferred"
+      }
     }
   },
   "Preset": {

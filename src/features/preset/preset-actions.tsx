@@ -5,8 +5,10 @@ import { useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { toApiError } from "@/lib/api/errors";
 import type { PresetVersion } from "@/lib/api/types";
+import { NAV_FORWARD } from "@/motion/view-transitions";
 import { Button, buttonClasses } from "@/ui/button";
 import { Check, Close, Download, Printer } from "@/ui/icons";
+import { ActionIcon } from "@/ui/action-icon";
 import { useProblemCopy } from "@/features/shell/problem-state";
 import { downloadPresetFile } from "@/features/generation/queries";
 
@@ -16,6 +18,7 @@ export function PresetActions({ version, sheetHref }: { version: PresetVersion; 
   const problemCopy = useProblemCopy();
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
   const filename = version.download.filename ?? `${version.name}.prst`;
   const reason = version.download.reason;
 
@@ -31,6 +34,8 @@ export function PresetActions({ version, sheetHref }: { version: PresetVersion; 
             setDownloading(true);
             try {
               await downloadPresetFile(version.preset_id, version.version, filename);
+              setDownloaded(true);
+              window.setTimeout(() => setDownloaded(false), 2400);
             } catch (error) {
               setDownloadError(problemCopy(toApiError(error).code).title);
             } finally {
@@ -38,10 +43,10 @@ export function PresetActions({ version, sheetHref }: { version: PresetVersion; 
             }
           }}
         >
-          <Download />
+          <ActionIcon state={downloading ? "busy" : downloaded ? "done" : "idle"} idle={<Download />} />
           {version.download.available ? t("download.button", { filename }) : t("download.generic")}
         </Button>
-        <Link href={sheetHref} className={buttonClasses("secondary", "lg")}>
+        <Link href={sheetHref} transitionTypes={NAV_FORWARD} className={buttonClasses("secondary", "lg")}>
           <Printer />
           {t("sheet.open")}
         </Link>

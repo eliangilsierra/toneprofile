@@ -3,16 +3,18 @@
 import { useReducedMotion } from "motion/react";
 import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { toApiError } from "@/lib/api/errors";
 import { blockSummary } from "@/lib/format/params";
 import type { Generation, IntentBlock, PresetVersion, ToneProfile } from "@/lib/api/types";
+import { useSeenOnce } from "@/motion/hooks";
 import { Reveal } from "@/motion/reveal";
+import { sharedName, SharedElement } from "@/motion/view-transitions";
 import { Button } from "@/ui/button";
 import { Info } from "@/ui/icons";
 import { Meter } from "@/ui/meter";
-import { PageSkeleton } from "@/ui/skeleton";
+import { PageSkeleton, Skeleton } from "@/ui/skeleton";
 import { FeedbackForm } from "@/features/feedback/feedback-form";
 import { useToneProfile, usePresetVersion } from "@/features/generation/queries";
 import { BlockInspector } from "@/features/preset/block-inspector";
@@ -27,10 +29,18 @@ import { ProblemState } from "@/features/shell/problem-state";
 import { AudioFacts } from "@/features/tone-profile/audio-facts";
 import { EvidenceList } from "@/features/tone-profile/evidence-list";
 import { Targets } from "@/features/tone-profile/targets";
+import {
+  PERCEPTUAL_BANDS,
+  TARGET_BAND,
+  TARGET_ORDER,
+  TARGET_ROLES,
+  type TargetKey,
+} from "@/visualization/tone-signature/geometry";
+import { ToneSignature } from "@/visualization/tone-signature/tone-signature";
 
 // d3 + the spectrum chart load only when an excerpt was measured.
 const Fingerprint = dynamic(() => import("@/features/tone-profile/fingerprint").then((module) => module.Fingerprint), {
-  loading: () => <div className="aspect-[800/260] animate-[signal-breathe_2.4s_ease-in-out_infinite] rounded-sm bg-surface-2" />,
+  loading: () => <Skeleton className="aspect-[800/260] w-full" />,
 });
 
 function useTranslationItems(profile: ToneProfile, version: PresetVersion): TranslationItem[] {
@@ -46,6 +56,7 @@ function useTranslationItems(profile: ToneProfile, version: PresetVersion): Tran
       if (intent) used.add(intent.id);
       items.push({
         id: intent?.id ?? `slot-${block.slot}`,
+        roleKey: intent?.role ?? null,
         role: intent ? tax(`roles.${intent.role}`) : block.slot,
         archetype: intent ? tax(`archetypes.${intent.archetype}`) : null,
         evidence: intent?.evidence_level,
@@ -58,6 +69,7 @@ function useTranslationItems(profile: ToneProfile, version: PresetVersion): Tran
       if (used.has(intent.id) || !intent.enabled) continue;
       items.push({
         id: intent.id,
+        roleKey: intent.role,
         role: tax(`roles.${intent.role}`),
         archetype: tax(`archetypes.${intent.archetype}`),
         evidence: intent.evidence_level,
@@ -69,13 +81,29 @@ function useTranslationItems(profile: ToneProfile, version: PresetVersion): Tran
   }, [profile, version, tax, tc]);
 }
 
-function SectionTitle({ id, eyebrow, title, lede }: { id: string; eyebrow?: string; title: string; lede?: string }) {
+function SectionTitle({
+  id,
+  eyebrow,
+  title,
+  lede,
+  transitionName,
+}: {
+  id: string;
+  eyebrow?: string;
+  title: string;
+  lede?: string;
+  /** Shared view-transition name (the title morphs into the next page's heading). */
+  transitionName?: string;
+}) {
+  const heading = (
+    <h2 id={id} className="mt-2 scroll-mt-24 text-2xl font-semibold tracking-tight md:text-3xl">
+      {title}
+    </h2>
+  );
   return (
     <div className="mb-6">
       {eyebrow && <p className="label !text-signal">{eyebrow}</p>}
-      <h2 id={id} className="mt-2 scroll-mt-24 text-2xl font-semibold tracking-tight md:text-3xl">
-        {title}
-      </h2>
+      {transitionName ? <SharedElement name={transitionName}>{heading}</SharedElement> : heading}
       {lede && <p className="mt-2 max-w-prose text-ink-muted">{lede}</p>}
     </div>
   );
@@ -109,13 +137,34 @@ function Result({
   const [touched, setTouched] = useState(false);
   const defaultBlock = version.chain.find((block) => block.slot === "AMP" && block.enabled) ?? version.chain.find((block) => block.enabled);
   const [selected, setSelected] = useState<string | null>(null);
+  const tax = useTranslations("Taxonomy");
 
-  // The signature moment: the tone profile translates itself into device modules.
+  // One highlight shared by the targets list, the Tone Signature, the fingerprint and the chain.
+  const [hoverTarget, setHoverTarget] = useState<TargetKey | null>(null);
+  const [pinnedTarget, setPinnedTarget] = useState<TargetKey | null>(null);
+  const activeTarget = hoverTarget ?? pinnedTarget;
+  const togglePin = useCallback((key: TargetKey) => setPinnedTarget((current) => (current === key ? null : key)), []);
+  const highlightIds = useMemo(() => {
+    if (!activeTarget) return null;
+    const roles = TARGET_ROLES[activeTarget];
+    return new Set(items.filter((item) => item.roleKey && roles.includes(item.roleKey)).map((item) => item.id));
+  }, [activeTarget, items]);
+  const focusBand = activeTarget ? TARGET_BAND[activeTarget] : null;
+  const tt = useTranslations("Profile.targets");
+  const signatureLabel = tprof("signature.aria", {
+    summary: TARGET_ORDER.map((key) => `${tt(`names.${key}`)} ${Math.round(profile.intent.targets[key].value * 100)}%`).join(", "),
+  });
+  const gain = profile.evidence.audio?.gain_class.value;
+
+  // The signature moment: when the chain comes into view, the tone profile translates itself into
+  // device modules, block by block along the signal path. Once; never after the user has chosen.
+  const chainRef = useRef<HTMLElement>(null);
+  const chainSeen = useSeenOnce(chainRef, 0.5);
   useEffect(() => {
-    if (touched || reduceMotion) return;
-    const timer = window.setTimeout(() => setMode("device"), 1400);
+    if (!chainSeen || touched || reduceMotion) return;
+    const timer = window.setTimeout(() => setMode("device"), 900);
     return () => window.clearTimeout(timer);
-  }, [touched, reduceMotion]);
+  }, [chainSeen, touched, reduceMotion]);
 
   const intents = new Map(profile.intent.chain.map((block) => [block.id, block]));
   const selectedItem = items.find((item) => item.id === selected);
@@ -178,7 +227,7 @@ function Result({
       </nav>
 
       {/* Signal chain: universal ⇄ device translation */}
-      <section aria-labelledby="chain">
+      <section ref={chainRef} aria-labelledby="chain">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
             <h2 id="chain" className="text-2xl font-semibold tracking-tight md:text-3xl">
@@ -201,6 +250,7 @@ function Result({
           mode={mode}
           label={tprof("chain.title")}
           selectedId={mode === "device" ? selectedId : null}
+          highlightIds={highlightIds}
           onSelect={(id) => {
             setTouched(true);
             setMode("device");
@@ -214,30 +264,67 @@ function Result({
         <div className="lg:col-span-2">
           <SectionTitle id="profile" title={tprof("title")} lede={tprof("lede")} />
         </div>
+        {/* Tone Signature + the character it encodes (the list is the accessible source). */}
+        <div className="flex flex-col items-center gap-4 lg:items-start">
+          <div className="w-full">
+            <h3 className="text-lg font-medium">{tprof("signature.title")}</h3>
+            <p className="mt-1 text-sm text-ink-muted">
+              {profile.evidence.audio ? tprof("signature.lede") : tprof("signature.ledeNoAudio")}
+            </p>
+          </div>
+          <ToneSignature
+            spectrum={profile.evidence.audio?.ltas ?? null}
+            targets={profile.intent.targets}
+            label={signatureLabel}
+            centerLabel={gain ? tax(`gainClass.${gain}`) : null}
+            activeTarget={activeTarget}
+            onActiveTarget={setHoverTarget}
+            activeBand={(profile.evidence.audio && PERCEPTUAL_BANDS.find((band) => band.key === focusBand)) || null}
+          />
+          <ul className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-[0.6875rem] uppercase tracking-[0.06em] text-ink-muted" aria-label={tprof("signature.legendLabel")}>
+            <li className="flex items-center gap-1.5">
+              <span aria-hidden className="h-1.5 w-4 bg-signal" />
+              {tprof("signature.legend.measured")}
+            </li>
+            <li className="flex items-center gap-1.5">
+              <span aria-hidden className="h-1.5 w-4 bg-measure" />
+              {tprof("signature.legend.research")}
+            </li>
+            <li className="flex items-center gap-1.5">
+              <span aria-hidden className="h-1.5 w-4 bg-[repeating-linear-gradient(90deg,var(--color-ink-faint)_0_3px,transparent_3px_6px)]" />
+              {tprof("signature.legend.inferred")}
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h3 className="text-lg font-medium">{tprof("targets.title")}</h3>
+          <p className="mb-3 mt-1 text-sm text-ink-muted">{tprof("targets.lede")}</p>
+          <Targets
+            targets={profile.intent.targets}
+            active={activeTarget}
+            pinned={pinnedTarget}
+            onHover={setHoverTarget}
+            onTogglePin={togglePin}
+          />
+          <p className="mt-3 text-xs text-ink-faint">{tprof("signature.hint")}</p>
+        </div>
         <div>
           <h3 className="mb-3 text-lg font-medium">{tprof("fingerprint.title")}</h3>
           {profile.evidence.audio ? (
             <>
               <p className="mb-4 text-sm text-ink-muted">{tprof("fingerprint.description")}</p>
-              <Fingerprint spectrum={profile.evidence.audio.ltas} />
+              <Fingerprint spectrum={profile.evidence.audio.ltas} focusBand={focusBand} />
             </>
           ) : (
             <p className="rounded-sm border border-dashed border-line-strong p-5 text-ink-muted">{tprof("fingerprint.noAudio")}</p>
           )}
         </div>
-        <div className="flex flex-col gap-10">
+        {profile.evidence.audio && (
           <div>
-            <h3 className="text-lg font-medium">{tprof("targets.title")}</h3>
-            <p className="mb-3 mt-1 text-sm text-ink-muted">{tprof("targets.lede")}</p>
-            <Targets targets={profile.intent.targets} />
+            <h3 className="mb-4 text-lg font-medium">{tprof("audio.title")}</h3>
+            <AudioFacts audio={profile.evidence.audio} />
           </div>
-          {profile.evidence.audio && (
-            <div>
-              <h3 className="mb-4 text-lg font-medium">{tprof("audio.title")}</h3>
-              <AudioFacts audio={profile.evidence.audio} />
-            </div>
-          )}
-        </div>
+        )}
         <div className="lg:col-span-2">
           <h3 className="text-lg font-medium">{tprof("evidence.title")}</h3>
           <p className="mb-4 mt-1 max-w-prose text-sm text-ink-muted">
@@ -257,8 +344,9 @@ function Result({
       <section aria-labelledby="preset">
         <SectionTitle
           id="preset"
-          eyebrow={`${tpre("deviceNames.valeton_gp180")} · ${tpre("version", { version: version.version })}`}
+          eyebrow={`${tpre.has(`deviceNames.${version.device_key}` as "deviceNames.valeton_gp180") ? tpre(`deviceNames.${version.device_key}` as "deviceNames.valeton_gp180") : version.device_key} · ${tpre("version", { version: version.version })}`}
           title={`${tpre("title")} “${version.name}”`}
+          transitionName={sharedName("preset", version.preset_id, String(version.version))}
           lede={tpre("lede")}
         />
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
