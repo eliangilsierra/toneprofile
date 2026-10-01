@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { useId, useRef, useState, type DragEvent } from "react";
 import { canDecode, decodePreview, type AudioPreview } from "@/lib/audio/decode";
@@ -7,7 +8,14 @@ import { ACCEPT_ATTRIBUTE, checkDuration, checkFile, defaultWindow } from "@/lib
 import { formatClock } from "@/lib/format/time";
 import { cn } from "@/ui/cn";
 import { Close, Upload } from "@/ui/icons";
-import { WaveformWindow, type AnalysisWindow } from "./waveform-window";
+import { Skeleton } from "@/ui/skeleton";
+import type { AnalysisWindow } from "./waveform-window";
+
+// The waveform, its window and the Web Audio preview load only once a file has been chosen.
+const WaveformWindow = dynamic(() => import("./waveform-window").then((module) => module.WaveformWindow), {
+  ssr: false,
+  loading: () => <Skeleton className="h-24 w-full" />,
+});
 
 export interface ExcerptValue {
   file: File;
@@ -99,6 +107,7 @@ export function ExcerptPicker({
             duration={value.preview.duration}
             value={value.window}
             onChange={(window) => onChange({ ...value, window })}
+            file={value.file}
           />
         ) : (
           <p className="text-sm text-ink-muted">{te("decodeUnavailable")}</p>
